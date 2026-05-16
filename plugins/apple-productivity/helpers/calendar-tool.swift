@@ -90,7 +90,12 @@ func has(_ input: [String: Any], _ key: String) -> Bool {
 
 func ensureAccess(_ store: EKEventStore) throws {
   let status = EKEventStore.authorizationStatus(for: .event)
-  if status.rawValue == 3 || status.rawValue == 4 {
+
+  if #available(macOS 14.0, *) {
+    if status == .fullAccess {
+      return
+    }
+  } else if status == .authorized {
     return
   }
 
