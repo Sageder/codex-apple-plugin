@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="Apple Calendar">
-  <rect x="14" y="12" width="100" height="104" rx="18" fill="#fff" stroke="#DDDDDF" stroke-width="1.5"/>
-  <path fill="#F4514A" d="M14 30c0-9.9 8.1-18 18-18h64c9.9 0 18 8.1 18 18v23H14V30z"/>
-  <path fill="none" stroke="#E6E6E8" stroke-width="1.5" d="M14 53h100"/>
-  <text x="64" y="43" fill="#fff" font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" font-size="23" font-weight="500" text-anchor="middle" letter-spacing="3">JUL</text>
-  <text x="64" y="96" fill="#565656" font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" font-size="54" font-weight="300" text-anchor="middle">17</text>
-</svg>

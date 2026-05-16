@@ -7,11 +7,11 @@ This repository contains a local Codex plugin that exposes one MCP server,
 helpers and returns live data from the Mac it is running on.
 
 <p align="center">
-  <img src="plugins/apple-productivity/assets/apple-mail.svg" alt="Apple Mail" width="82" />
+  <img src="plugins/apple-productivity/assets/apple-mail.png" alt="Apple Mail" width="82" />
   &nbsp;&nbsp;&nbsp;
-  <img src="plugins/apple-productivity/assets/apple-reminders.svg" alt="Apple Reminders" width="82" />
+  <img src="plugins/apple-productivity/assets/apple-reminders.png" alt="Apple Reminders" width="82" />
   &nbsp;&nbsp;&nbsp;
-  <img src="plugins/apple-productivity/assets/apple-calendar.svg" alt="Apple Calendar" width="82" />
+  <img src="plugins/apple-productivity/assets/apple-calendar.png" alt="Apple Calendar" width="82" />
 </p>
 
 <p align="center"><strong>Mail</strong> · <strong>Reminders</strong> · <strong>Calendar</strong></p>
