@@ -45,6 +45,7 @@ access use Swift/EventKit helpers.
 
 - Use `reminders_list_lists` when the user asks what lists are available or when a target list is ambiguous.
 - Use `reminders_search` for reminder candidates and handles.
+- For "nearest reminder", "next reminder", and other upcoming scheduled-reminder requests, use `reminders_search` with `scheduled: "scheduled"`, `scheduledSince` set to the current local ISO datetime, `sort: "scheduled"`, and a small `limit`. Do not put words like "nearest" or "upcoming" in `query` unless the user is searching reminder text.
 - Use `reminders_read` only for selected reminders and keep body limits tight.
 - Use `reminders_create`, `reminders_update`, `reminders_complete`, `reminders_delete`, and `reminders_move` only when the configured write guard allows it.
 - Treat `reminders_delete` as real reminder deletion, not a move-to-trash workflow.

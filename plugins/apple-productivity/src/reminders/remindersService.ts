@@ -12,11 +12,15 @@ export interface RemindersSearchArgs {
   query?: string;
   list?: string;
   completed?: "all" | "completed" | "incomplete";
+  scheduled?: "all" | "scheduled" | "unscheduled";
+  scheduledSince?: string;
+  scheduledBefore?: string;
   dueSince?: string;
   dueBefore?: string;
   remindSince?: string;
   remindBefore?: string;
   priority?: ReminderPriority;
+  sort?: "relevance" | "scheduled";
   limit?: number;
   maxScanPerList?: number;
 }

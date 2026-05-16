@@ -28,7 +28,7 @@ export function registerRemindersTools(server: McpServer, reminders: RemindersSe
     "reminders_search",
     {
       title: "Search Apple Reminders",
-      description: "Search live Apple Reminders metadata and return reminder handles for follow-up reads or actions.",
+      description: "Search live Apple Reminders metadata and return reminder handles for follow-up reads or actions. For nearest or upcoming scheduled reminders, use scheduled: scheduled, scheduledSince: now, sort: scheduled, and a small limit instead of putting words like nearest in query.",
       inputSchema: remindersSearchSchema,
       annotations: { readOnlyHint: true }
     },

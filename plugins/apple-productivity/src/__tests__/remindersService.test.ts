@@ -59,9 +59,22 @@ function body(): ReminderBody {
 describe("reminders service", () => {
   it("forwards searches and wraps Swift results for MCP responses", async () => {
     const backend = new MockBackend([[summary()]]);
-    const result = await service(backend).search({ query: "synthetic" });
+    const result = await service(backend).search({
+      query: "synthetic",
+      scheduled: "scheduled",
+      scheduledSince: "2026-05-16T22:00:00+02:00",
+      sort: "scheduled"
+    });
 
-    expect(backend.calls[0]).toEqual({ action: "search", input: { query: "synthetic" } });
+    expect(backend.calls[0]).toEqual({
+      action: "search",
+      input: {
+        query: "synthetic",
+        scheduled: "scheduled",
+        scheduledSince: "2026-05-16T22:00:00+02:00",
+        sort: "scheduled"
+      }
+    });
     expect(result).toEqual({ reminders: [summary()] });
   });
 

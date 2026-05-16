@@ -63,11 +63,15 @@ struct SearchInput: Codable {
     let query: String?
     let list: String?
     let completed: String?
+    let scheduled: String?
+    let scheduledSince: String?
+    let scheduledBefore: String?
     let dueSince: String?
     let dueBefore: String?
     let remindSince: String?
     let remindBefore: String?
     let priority: String?
+    let sort: String?
     let limit: Int?
     let maxScanPerList: Int?
 }
@@ -363,13 +367,17 @@ final class ReminderRunner {
         let limit = input.limit ?? 20
         let reminders = try fetchReminders(in: selectedCalendars, maxPerCalendar: maxScan)
         let query = input.query ?? ""
-        let scored = reminders
-            .compactMap { reminder -> ReminderOutput? in
+        let sortMode = input.sort ?? (hasScheduledFilter(input) ? "scheduled" : "relevance")
+        let matched = reminders
+            .compactMap { reminder -> (output: ReminderOutput, scheduledDate: Date?)? in
                 guard passesFilters(reminder, input: input) else { return nil }
-                return output(for: reminder, query: query, includeBody: false, maxBodyChars: 0, includeRichFields: false)
+                return (
+                    output: output(for: reminder, query: query, includeBody: false, maxBodyChars: 0, includeRichFields: false),
+                    scheduledDate: sortScheduledDate(reminder, input: input)
+                )
             }
-            .sorted { ($0.score ?? 0) > ($1.score ?? 0) }
-        return Array(scored.prefix(limit))
+            .sorted { compareSearchResults($0, $1, sortMode: sortMode) }
+        return Array(matched.prefix(limit).map(\.output))
     }
 
     private func read(_ input: ReadInput) throws -> [ReminderOutput] {
@@ -683,11 +691,29 @@ final class ReminderRunner {
             return false
         }
 
-        if !dateInRange(dateFromComponents(reminder.dueDateComponents), since: input.dueSince, before: input.dueBefore, field: "dueDate") {
+        let dueDate = dateFromComponents(reminder.dueDateComponents)
+        let remindMeDate = firstAlarmDate(reminder)
+        let dates = scheduledDates(for: reminder)
+
+        switch input.scheduled ?? "all" {
+        case "scheduled":
+            if dates.isEmpty { return false }
+        case "unscheduled":
+            if !dates.isEmpty { return false }
+        default:
+            break
+        }
+
+        if hasScheduledRange(input),
+           !dates.contains(where: { dateInRange($0, since: input.scheduledSince, before: input.scheduledBefore, field: "scheduledDate") }) {
             return false
         }
 
-        if !dateInRange(firstAlarmDate(reminder), since: input.remindSince, before: input.remindBefore, field: "remindMeDate") {
+        if !dateInRange(dueDate, since: input.dueSince, before: input.dueBefore, field: "dueDate") {
+            return false
+        }
+
+        if !dateInRange(remindMeDate, since: input.remindSince, before: input.remindBefore, field: "remindMeDate") {
             return false
         }
 
@@ -916,6 +942,61 @@ final class ReminderRunner {
             interval: rule.interval,
             endDate: rule.recurrenceEnd?.endDate.map(formatDate)
         )
+    }
+
+    private func compareSearchResults(
+        _ left: (output: ReminderOutput, scheduledDate: Date?),
+        _ right: (output: ReminderOutput, scheduledDate: Date?),
+        sortMode: String
+    ) -> Bool {
+        let leftScore = left.output.score ?? 0
+        let rightScore = right.output.score ?? 0
+
+        if sortMode != "scheduled", leftScore != rightScore {
+            return leftScore > rightScore
+        }
+
+        switch (left.scheduledDate, right.scheduledDate) {
+        case (.some(let leftDate), .some(let rightDate)) where leftDate != rightDate:
+            return leftDate < rightDate
+        case (.some, .none):
+            return true
+        case (.none, .some):
+            return false
+        default:
+            break
+        }
+
+        if sortMode == "scheduled", leftScore != rightScore {
+            return leftScore > rightScore
+        }
+
+        return left.output.name.localizedCaseInsensitiveCompare(right.output.name) == .orderedAscending
+    }
+
+    private func hasScheduledFilter(_ input: SearchInput) -> Bool {
+        input.scheduled == "scheduled" || hasScheduledRange(input)
+    }
+
+    private func hasScheduledRange(_ input: SearchInput) -> Bool {
+        input.scheduledSince != nil || input.scheduledBefore != nil
+    }
+
+    private func sortScheduledDate(_ reminder: EKReminder, input: SearchInput) -> Date? {
+        let dates = scheduledDates(for: reminder)
+        if hasScheduledRange(input) {
+            return dates
+                .filter { dateInRange($0, since: input.scheduledSince, before: input.scheduledBefore, field: "scheduledDate") }
+                .min()
+        }
+
+        return dates.min()
+    }
+
+    private func scheduledDates(for reminder: EKReminder) -> [Date] {
+        ([dateFromComponents(reminder.dueDateComponents)] + [firstAlarmDate(reminder)])
+            .compactMap { $0 }
+            .sorted()
     }
 
     private func firstAlarmDate(_ reminder: EKReminder) -> Date? {

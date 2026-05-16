@@ -15,6 +15,22 @@ describe("reminder schemas", () => {
     });
   });
 
+  it("accepts scheduled reminder searches for nearest/upcoming requests", () => {
+    expect(
+      remindersSearchSchema.parse({
+        scheduled: "scheduled",
+        scheduledSince: "2026-05-16T22:00:00+02:00",
+        sort: "scheduled",
+        limit: 1
+      })
+    ).toMatchObject({
+      scheduled: "scheduled",
+      scheduledSince: "2026-05-16T22:00:00+02:00",
+      sort: "scheduled",
+      limit: 1
+    });
+  });
+
   it("accepts power-user fields supported by the Swift/EventKit backend", () => {
     expect(
       remindersCreateSchema.parse({

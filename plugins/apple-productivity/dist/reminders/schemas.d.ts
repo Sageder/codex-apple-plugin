@@ -10,6 +10,13 @@ export declare const remindersSearchSchema: z.ZodObject<{
         completed: "completed";
         incomplete: "incomplete";
     }>>>;
+    scheduled: z.ZodOptional<z.ZodEnum<{
+        all: "all";
+        scheduled: "scheduled";
+        unscheduled: "unscheduled";
+    }>>;
+    scheduledSince: z.ZodOptional<z.ZodString>;
+    scheduledBefore: z.ZodOptional<z.ZodString>;
     dueSince: z.ZodOptional<z.ZodString>;
     dueBefore: z.ZodOptional<z.ZodString>;
     remindSince: z.ZodOptional<z.ZodString>;
@@ -19,6 +26,10 @@ export declare const remindersSearchSchema: z.ZodObject<{
         low: "low";
         medium: "medium";
         high: "high";
+    }>>;
+    sort: z.ZodOptional<z.ZodEnum<{
+        scheduled: "scheduled";
+        relevance: "relevance";
     }>>;
     limit: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
     maxScanPerList: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;

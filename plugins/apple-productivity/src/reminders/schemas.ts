@@ -26,11 +26,21 @@ export const remindersSearchSchema = z
     query: z.string().optional().describe("Search terms for reminder title, notes, list, or URL."),
     list: z.string().optional().describe("Reminder list name or identifier."),
     completed: z.enum(["all", "completed", "incomplete"]).optional().default("incomplete"),
+    scheduled: z
+      .enum(["all", "scheduled", "unscheduled"])
+      .optional()
+      .describe("Filter by whether the reminder has either a due date or reminder alarm."),
+    scheduledSince: optionalDateString.describe("Match reminders whose dueDate or remindMeDate is on or after this date."),
+    scheduledBefore: optionalDateString.describe("Match reminders whose dueDate or remindMeDate is on or before this date."),
     dueSince: optionalDateString,
     dueBefore: optionalDateString,
     remindSince: optionalDateString,
     remindBefore: optionalDateString,
     priority: reminderPrioritySchema.optional(),
+    sort: z
+      .enum(["relevance", "scheduled"])
+      .optional()
+      .describe("Use scheduled for nearest/upcoming reminders; sorts by the nearest matching dueDate or remindMeDate."),
     limit: z.number().int().positive().max(100).optional().default(20),
     maxScanPerList: z.number().int().positive().max(2000).optional().default(200)
   })

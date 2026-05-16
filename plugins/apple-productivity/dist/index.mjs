@@ -32326,11 +32326,15 @@ var remindersSearchSchema = external_exports.object({
   query: external_exports.string().optional().describe("Search terms for reminder title, notes, list, or URL."),
   list: external_exports.string().optional().describe("Reminder list name or identifier."),
   completed: external_exports.enum(["all", "completed", "incomplete"]).optional().default("incomplete"),
+  scheduled: external_exports.enum(["all", "scheduled", "unscheduled"]).optional().describe("Filter by whether the reminder has either a due date or reminder alarm."),
+  scheduledSince: optionalDateString.describe("Match reminders whose dueDate or remindMeDate is on or after this date."),
+  scheduledBefore: optionalDateString.describe("Match reminders whose dueDate or remindMeDate is on or before this date."),
   dueSince: optionalDateString,
   dueBefore: optionalDateString,
   remindSince: optionalDateString,
   remindBefore: optionalDateString,
   priority: reminderPrioritySchema.optional(),
+  sort: external_exports.enum(["relevance", "scheduled"]).optional().describe("Use scheduled for nearest/upcoming reminders; sorts by the nearest matching dueDate or remindMeDate."),
   limit: external_exports.number().int().positive().max(100).optional().default(20),
   maxScanPerList: external_exports.number().int().positive().max(2e3).optional().default(200)
 }).strict();
@@ -32396,7 +32400,7 @@ function registerRemindersTools(server2, reminders) {
     "reminders_search",
     {
       title: "Search Apple Reminders",
-      description: "Search live Apple Reminders metadata and return reminder handles for follow-up reads or actions.",
+      description: "Search live Apple Reminders metadata and return reminder handles for follow-up reads or actions. For nearest or upcoming scheduled reminders, use scheduled: scheduled, scheduledSince: now, sort: scheduled, and a small limit instead of putting words like nearest in query.",
       inputSchema: remindersSearchSchema,
       annotations: { readOnlyHint: true }
     },

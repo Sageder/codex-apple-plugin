@@ -1,6 +1,6 @@
 {
   "name": "apple-productivity",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Access Apple Mail, Calendar, and Reminders through local macOS apps.",
   "author": {
     "name": "Clemens Sageder",

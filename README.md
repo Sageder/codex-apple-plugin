@@ -173,6 +173,9 @@ Notes:
 
 - Supported fields include title, notes/body, due date, reminder alarms,
   priority, URL, recurrence, completion state, and list movement.
+- For nearest or upcoming reminders, search scheduled reminders with
+  `scheduled: "scheduled"`, `scheduledSince` set to now, `sort: "scheduled"`,
+  and a small `limit`. This matches either due dates or reminder alarms.
 - Tags, subtasks, and attachments are not supported.
 
 ## Privacy
