@@ -1,0 +1,23 @@
+{
+  "name": "codex-apple-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local Codex plugin for Apple Mail, Calendar, and Reminders workflows.",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "check": "npm run build && npm run test",
+    "smoke:mail": "tsx plugins/apple-productivity/scripts/smoke-mail.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.8.0",
+    "tsx": "^4.22.0",
+    "typescript": "^6.0.3",
+    "vitest": "^3.2.4"
+  }
+}

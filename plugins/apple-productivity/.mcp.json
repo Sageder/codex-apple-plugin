@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "apple-productivity": {
+      "command": "node",
+      "args": ["./dist/index.js"],
+      "env": {
+        "APPLE_PRODUCTIVITY_WRITE_MODE": "draft"
+      }
+    }
+  }
+}

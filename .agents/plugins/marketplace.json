@@ -1,0 +1,20 @@
+{
+  "name": "sageder-local",
+  "interface": {
+    "displayName": "Sage Local Plugins"
+  },
+  "plugins": [
+    {
+      "name": "apple-productivity",
+      "source": {
+        "source": "local",
+        "path": "./plugins/apple-productivity"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

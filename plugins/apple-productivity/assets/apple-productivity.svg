@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="Apple Productivity">
+  <rect width="128" height="128" rx="28" fill="#0A84FF"/>
+  <path d="M24 42c0-6.6 5.4-12 12-12h56c6.6 0 12 5.4 12 12v44c0 6.6-5.4 12-12 12H36c-6.6 0-12-5.4-12-12V42z" fill="#fff"/>
+  <path d="M34 43l27.7 24.2a3.5 3.5 0 0 0 4.6 0L94 43" fill="none" stroke="#0A84FF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M39 91l18.5-19M89 91L70.5 72" fill="none" stroke="#0A84FF" stroke-width="6" stroke-linecap="round"/>
+</svg>
+
