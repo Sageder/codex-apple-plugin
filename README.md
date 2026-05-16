@@ -1,4 +1,4 @@
-# Apple Productivity MCP Plugin
+# Apple Productivity MCP Plugin for Codex
 
 Use Apple Mail, Calendar, and Reminders from a local MCP client on macOS.
 
