@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 export class RemindersNativeBridgeError extends Error {
@@ -14,7 +15,7 @@ export class RemindersNativeBridge {
     helperPath;
     constructor(options) {
         this.options = options;
-        this.helperPath = options.helperPath ?? join(dirname(fileURLToPath(import.meta.url)), "reminders-helper");
+        this.helperPath = options.helperPath ?? defaultHelperPath();
     }
     run(action, input = {}) {
         return new Promise((resolve, reject) => {
@@ -73,5 +74,13 @@ export class RemindersNativeBridge {
             child.stdin.end(JSON.stringify(input));
         });
     }
+}
+function defaultHelperPath() {
+    const moduleDir = dirname(fileURLToPath(import.meta.url));
+    const candidates = [
+        join(moduleDir, "reminders-helper"),
+        join(moduleDir, "reminders", "reminders-helper")
+    ];
+    return candidates.find(existsSync) ?? candidates[0];
 }
 //# sourceMappingURL=nativeBridge.js.map

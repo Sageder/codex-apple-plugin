@@ -1,4 +1,6 @@
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export class SwiftCalendarBridgeError extends Error {
@@ -16,13 +18,20 @@ export interface SwiftCalendarBridgeOptions {
   helperPath?: string;
 }
 
-const defaultHelperPath = fileURLToPath(new URL("../../helpers/calendar-tool.swift", import.meta.url));
+function defaultHelperPath(): string {
+  const moduleDir = dirname(fileURLToPath(import.meta.url));
+  const candidates = [
+    resolve(moduleDir, "../../helpers/calendar-tool.swift"),
+    resolve(moduleDir, "../helpers/calendar-tool.swift")
+  ];
+  return candidates.find(existsSync) ?? candidates[0];
+}
 
 export class SwiftCalendarBridge {
   private readonly helperPath: string;
 
   constructor(private readonly options: SwiftCalendarBridgeOptions) {
-    this.helperPath = options.helperPath ?? defaultHelperPath;
+    this.helperPath = options.helperPath ?? defaultHelperPath();
   }
 
   async run<T>(action: string, input: unknown = {}): Promise<T> {

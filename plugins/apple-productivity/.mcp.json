@@ -2,7 +2,7 @@
   "mcpServers": {
     "apple-productivity": {
       "command": "node",
-      "args": ["./dist/index.js"],
+      "args": ["./dist/index.mjs"],
       "env": {
         "APPLE_PRODUCTIVITY_WRITE_MODE": "draft",
         "APPLE_PRODUCTIVITY_HELPER_TIMEOUT_MS": "60000",

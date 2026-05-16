@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -25,7 +26,7 @@ export class RemindersNativeBridge implements RemindersBackend {
   private readonly helperPath: string;
 
   constructor(private readonly options: RemindersNativeBridgeOptions) {
-    this.helperPath = options.helperPath ?? join(dirname(fileURLToPath(import.meta.url)), "reminders-helper");
+    this.helperPath = options.helperPath ?? defaultHelperPath();
   }
 
   run<T>(action: string, input: unknown = {}): Promise<T> {
@@ -100,4 +101,13 @@ export class RemindersNativeBridge implements RemindersBackend {
       child.stdin.end(JSON.stringify(input));
     });
   }
+}
+
+function defaultHelperPath(): string {
+  const moduleDir = dirname(fileURLToPath(import.meta.url));
+  const candidates = [
+    join(moduleDir, "reminders-helper"),
+    join(moduleDir, "reminders", "reminders-helper")
+  ];
+  return candidates.find(existsSync) ?? candidates[0];
 }

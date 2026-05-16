@@ -5,7 +5,8 @@
   "type": "module",
   "description": "Local Codex plugin for Apple Mail, Calendar, and Reminders workflows.",
   "scripts": {
-    "build": "tsc -p tsconfig.json && swift build --package-path plugins/apple-productivity/swift && npm run build:reminders-helper",
+    "build": "tsc -p tsconfig.json && npm run build:mcp && swift build --package-path plugins/apple-productivity/swift && npm run build:reminders-helper",
+    "build:mcp": "esbuild plugins/apple-productivity/src/index.ts --bundle --platform=node --format=esm --target=node18 --outfile=plugins/apple-productivity/dist/index.mjs",
     "build:reminders-helper": "mkdir -p plugins/apple-productivity/dist/reminders && xcrun swiftc -framework EventKit plugins/apple-productivity/src/reminders/remindersHelper.swift -o plugins/apple-productivity/dist/reminders/reminders-helper",
     "test": "vitest run",
     "check": "npm run build && npm run test",
@@ -19,6 +20,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.8.0",
+    "esbuild": "^0.28.0",
     "tsx": "^4.22.0",
     "typescript": "^6.0.3",
     "vitest": "^3.2.4"
