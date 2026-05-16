@@ -2,6 +2,7 @@
   "mcpServers": {
     "apple-productivity": {
       "command": "node",
+      "cwd": ".",
       "args": ["./dist/index.mjs"],
       "env": {
         "APPLE_PRODUCTIVITY_WRITE_MODE": "draft",

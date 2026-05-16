@@ -1,6 +1,6 @@
 {
   "name": "apple-productivity",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Access Apple Mail, Calendar, and Reminders through local macOS apps.",
   "author": {
     "name": "Clemens Sageder",
@@ -27,6 +27,7 @@
     "category": "Productivity",
     "capabilities": [
       "Interactive",
+      "Read",
       "Write"
     ],
     "websiteURL": "https://support.apple.com/mail",
@@ -35,10 +36,7 @@
     "defaultPrompt": [
       "Find useful context from my Apple Mail",
       "Draft a reply in Apple Mail",
-      "Archive irrelevant messages",
-      "Create a calendar event",
-      "Create a reminder for this task",
-      "Show my overdue reminders"
+      "Create a calendar event"
     ],
     "brandColor": "#0A84FF",
     "composerIcon": "./assets/apple-productivity.svg",
