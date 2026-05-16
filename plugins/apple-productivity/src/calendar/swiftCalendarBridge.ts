@@ -54,6 +54,7 @@ export class SwiftCalendarBridge {
   private runRaw(action: string, input: unknown): Promise<string> {
     return new Promise((resolve, reject) => {
       const child = spawn("/usr/bin/xcrun", ["swift", this.helperPath, action], {
+        cwd: dirname(this.helperPath),
         stdio: ["pipe", "pipe", "pipe"]
       });
 

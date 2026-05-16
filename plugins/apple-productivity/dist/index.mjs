@@ -31200,6 +31200,7 @@ var SwiftCalendarBridge = class {
   runRaw(action, input) {
     return new Promise((resolve3, reject) => {
       const child = spawn("/usr/bin/xcrun", ["swift", this.helperPath, action], {
+        cwd: dirname(this.helperPath),
         stdio: ["pipe", "pipe", "pipe"]
       });
       let stdout = "";
@@ -31269,6 +31270,7 @@ var RemindersNativeBridge = class {
   run(action, input = {}) {
     return new Promise((resolve3, reject) => {
       const child = spawn2(this.helperPath, [action], {
+        cwd: dirname2(this.helperPath),
         stdio: ["pipe", "pipe", "pipe"]
       });
       let stdout = "";
@@ -31377,6 +31379,7 @@ var SwiftBridge = class {
       const command = existsSync3(builtHelper) ? builtHelper : "swift";
       const args = existsSync3(builtHelper) ? [] : ["run", "--package-path", swiftDir, "apple-productivity-helper"];
       const child = spawn3(command, args, {
+        cwd: swiftDir,
         stdio: ["pipe", "pipe", "pipe"]
       });
       let stdout = "";

@@ -49,6 +49,7 @@ export class SwiftBridge {
       const args = existsSync(builtHelper) ? [] : ["run", "--package-path", swiftDir, "apple-productivity-helper"];
 
       const child = spawn(command, args, {
+        cwd: swiftDir,
         stdio: ["pipe", "pipe", "pipe"]
       });
 

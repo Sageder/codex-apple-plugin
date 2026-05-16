@@ -20,6 +20,7 @@ export class RemindersNativeBridge {
     run(action, input = {}) {
         return new Promise((resolve, reject) => {
             const child = spawn(this.helperPath, [action], {
+                cwd: dirname(this.helperPath),
                 stdio: ["pipe", "pipe", "pipe"]
             });
             let stdout = "";

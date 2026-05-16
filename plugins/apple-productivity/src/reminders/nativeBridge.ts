@@ -32,6 +32,7 @@ export class RemindersNativeBridge implements RemindersBackend {
   run<T>(action: string, input: unknown = {}): Promise<T> {
     return new Promise((resolve, reject) => {
       const child = spawn(this.helperPath, [action], {
+        cwd: dirname(this.helperPath),
         stdio: ["pipe", "pipe", "pipe"]
       });
 
