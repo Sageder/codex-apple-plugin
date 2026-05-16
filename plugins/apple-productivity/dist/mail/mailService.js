@@ -78,9 +78,9 @@ export class MailService {
         if (!decision.allowed) {
             if (this.config.writeMode === "draft" && !args.dryRun) {
                 const draft = await this.compose({ ...args, visible: true });
-                return { mode: decision.mode, sent: false, drafted: true, reason: decision.reason, draft };
+                return { mode: decision.mode, allowed: false, sent: false, drafted: true, reason: decision.reason, draft };
             }
-            return { mode: decision.mode, sent: false, preview: previewMessage(args), reason: decision.reason };
+            return { mode: decision.mode, allowed: false, sent: false, preview: previewMessage(args), reason: decision.reason };
         }
         return this.bridge.call("mail.send", {
             ...args,
@@ -103,6 +103,7 @@ export class MailService {
         if (!decision.allowed) {
             return {
                 mode: decision.mode,
+                allowed: false,
                 moved: false,
                 targetRole: args.targetRole,
                 targetMailbox: args.targetMailbox,
@@ -134,6 +135,7 @@ export class MailService {
         if (!decision.allowed) {
             return {
                 mode: decision.mode,
+                allowed: false,
                 moved: false,
                 count: tokens.length,
                 targets: tokens,

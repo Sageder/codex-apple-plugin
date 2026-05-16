@@ -12,6 +12,7 @@ describe("write guard", () => {
     expect(decideWrite({ writeMode: "confirm" }, "mail.archive").allowed).toBe(false);
     expect(decideWrite({ writeMode: "confirm" }, "mail.archive", true).allowed).toBe(true);
     expect(decideWrite({ writeMode: "confirm" }, "calendar.create", true).allowed).toBe(true);
+    expect(decideWrite({ writeMode: "confirm" }, "reminders.create", true).allowed).toBe(true);
   });
 
   it("allows writes in direct mode unless dry-run", () => {
@@ -19,6 +20,9 @@ describe("write guard", () => {
     const dryRun = decideWrite({ writeMode: "direct" }, "calendar.update", false, true);
     expect(dryRun.allowed).toBe(false);
     expect(dryRun.reason).toBe("calendar.update dry run requested");
+    expect(decideWrite({ writeMode: "direct" }, "reminders.delete", false, true).reason).toBe(
+      "reminders.delete dry run requested"
+    );
   });
 
   it("keeps legacy mail action names compatible", () => {

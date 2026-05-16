@@ -10,7 +10,8 @@
     "test": "vitest run",
     "check": "npm run build && npm run test",
     "smoke:mail": "tsx plugins/apple-productivity/scripts/smoke-mail.ts",
-    "smoke:calendar": "tsx plugins/apple-productivity/scripts/smoke-calendar.ts"
+    "smoke:calendar": "tsx plugins/apple-productivity/scripts/smoke-calendar.ts",
+    "smoke:reminders": "tsx plugins/apple-productivity/scripts/smoke-reminders.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",

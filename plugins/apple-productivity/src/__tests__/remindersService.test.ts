@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RuntimeConfig } from "../config.js";
+import { encodeReminderHandle } from "../reminders/handle.js";
 import type { RemindersBackend } from "../reminders/nativeBridge.js";
 import { RemindersService } from "../reminders/remindersService.js";
 import type { ReminderBody, ReminderSummary } from "../reminders/types.js";
@@ -25,6 +26,11 @@ const baseConfig: RuntimeConfig = {
 };
 
 const handle = "swift-owned-handle";
+const encodedHandle = encodeReminderHandle({
+  listId: "list-1",
+  listName: "Tasks",
+  id: "reminder-1"
+});
 
 function service(backend: MockBackend, config: Partial<RuntimeConfig> = {}) {
   return new RemindersService(backend as unknown as RemindersBackend, { ...baseConfig, ...config });
@@ -80,24 +86,15 @@ describe("reminders service", () => {
     const backend = new MockBackend([response]);
     const result = await service(backend).create({ name: "Synthetic task", body: "notes" });
 
-    expect(backend.calls[0]).toEqual({
-      action: "create",
-      input: {
-        name: "Synthetic task",
-        body: "notes",
-        writeMode: "draft",
-        defaultList: "Tasks",
-        maxBodyChars: 12000
-      }
-    });
-    expect(result).toEqual(response);
+    expect(backend.calls).toHaveLength(0);
+    expect(result).toMatchObject({ ...response, allowed: false });
   });
 
-  it("forwards direct updates without decoding handles in TypeScript", async () => {
+  it("forwards direct updates after the shared write guard allows them", async () => {
     const response = { updated: true, moved: false, reminder: body() };
     const backend = new MockBackend([response]);
     const result = await service(backend, { writeMode: "direct" }).update({
-      handle,
+      handle: encodedHandle,
       body: null,
       dueDate: null
     });
@@ -105,7 +102,7 @@ describe("reminders service", () => {
     expect(backend.calls[0]).toEqual({
       action: "update",
       input: {
-        handle,
+        handle: encodedHandle,
         body: null,
         dueDate: null,
         writeMode: "direct",
@@ -116,29 +113,42 @@ describe("reminders service", () => {
     expect(result).toEqual(response);
   });
 
-  it("forwards batch writes to Swift for guard decisions", async () => {
+  it("previews batch writes in TypeScript when the shared write guard blocks", async () => {
+    const backend = new MockBackend();
+
+    const complete = await service(backend).complete({ handles: [encodedHandle] });
+    const deletion = await service(backend).delete({ handles: [encodedHandle], dryRun: true });
+    const move = await service(backend).move({ handles: [encodedHandle], list: "Later" });
+
+    expect(backend.calls).toHaveLength(0);
+    expect(complete).toMatchObject({ mode: "draft", allowed: false, completed: false, requestedCompleted: true });
+    expect(deletion).toMatchObject({ mode: "draft", allowed: false, deleted: false, count: 1 });
+    expect(move).toMatchObject({ mode: "draft", allowed: false, moved: false, list: "Later", count: 1 });
+  });
+
+  it("forwards batch writes to Swift once the shared write guard allows them", async () => {
     const backend = new MockBackend([
-      { completed: false, requestedCompleted: true, count: 1 },
-      { deleted: false, count: 1 },
-      { moved: false, list: "Later", count: 1 }
+      { completed: true, reminders: [] },
+      { deleted: [{ listId: "list-1", listName: "Tasks", id: "reminder-1" }] },
+      { moved: [] }
     ]);
 
-    await service(backend).complete({ handles: [handle] });
-    await service(backend).delete({ handles: [handle], dryRun: true });
-    await service(backend).move({ handles: [handle], list: "Later" });
+    await service(backend, { writeMode: "direct" }).complete({ handles: [encodedHandle] });
+    await service(backend, { writeMode: "direct" }).delete({ handles: [encodedHandle] });
+    await service(backend, { writeMode: "direct" }).move({ handles: [encodedHandle], list: "Later" });
 
     expect(backend.calls).toEqual([
       {
         action: "complete",
-        input: { handles: [handle], writeMode: "draft", defaultList: "Tasks", maxBodyChars: 12000 }
+        input: { handles: [encodedHandle], writeMode: "direct", defaultList: "Tasks", maxBodyChars: 12000 }
       },
       {
         action: "delete",
-        input: { handles: [handle], dryRun: true, writeMode: "draft", defaultList: "Tasks", maxBodyChars: 12000 }
+        input: { handles: [encodedHandle], writeMode: "direct", defaultList: "Tasks", maxBodyChars: 12000 }
       },
       {
         action: "move",
-        input: { handles: [handle], list: "Later", writeMode: "draft", defaultList: "Tasks", maxBodyChars: 12000 }
+        input: { handles: [encodedHandle], list: "Later", writeMode: "direct", defaultList: "Tasks", maxBodyChars: 12000 }
       }
     ]);
   });

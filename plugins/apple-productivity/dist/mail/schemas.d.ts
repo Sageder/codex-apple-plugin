@@ -22,7 +22,7 @@ export declare const mailSearchSchema: z.ZodObject<{
     includeTrash: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
     limit: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
     maxScanPerMailbox: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
-}, z.core.$strip>;
+}, z.core.$strict>;
 export declare const mailRetrieveContextSchema: z.ZodObject<{
     query: z.ZodOptional<z.ZodString>;
     subject: z.ZodOptional<z.ZodString>;
@@ -48,11 +48,11 @@ export declare const mailRetrieveContextSchema: z.ZodObject<{
     maxScanPerMailbox: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
     topK: z.ZodOptional<z.ZodNumber>;
     maxBodyChars: z.ZodOptional<z.ZodNumber>;
-}, z.core.$strip>;
+}, z.core.$strict>;
 export declare const mailReadSchema: z.ZodObject<{
     handles: z.ZodArray<z.ZodString>;
     maxBodyChars: z.ZodOptional<z.ZodNumber>;
-}, z.core.$strip>;
+}, z.core.$strict>;
 export declare const mailComposeSchema: z.ZodObject<{
     from: z.ZodOptional<z.ZodString>;
     to: z.ZodArray<z.ZodString>;
@@ -61,7 +61,7 @@ export declare const mailComposeSchema: z.ZodObject<{
     subject: z.ZodString;
     body: z.ZodString;
     visible: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
-}, z.core.$strip>;
+}, z.core.$strict>;
 export declare const mailSendSchema: z.ZodObject<{
     from: z.ZodOptional<z.ZodString>;
     to: z.ZodArray<z.ZodString>;
@@ -72,12 +72,12 @@ export declare const mailSendSchema: z.ZodObject<{
     visible: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
     confirm: z.ZodOptional<z.ZodBoolean>;
     dryRun: z.ZodOptional<z.ZodBoolean>;
-}, z.core.$strip>;
+}, z.core.$strict>;
 export declare const mailWriteSchema: z.ZodObject<{
     handles: z.ZodArray<z.ZodString>;
     confirm: z.ZodOptional<z.ZodBoolean>;
     dryRun: z.ZodOptional<z.ZodBoolean>;
-}, z.core.$strip>;
+}, z.core.$strict>;
 export declare const mailMoveSchema: z.ZodObject<{
     handles: z.ZodArray<z.ZodString>;
     confirm: z.ZodOptional<z.ZodBoolean>;
@@ -89,9 +89,9 @@ export declare const mailMoveSchema: z.ZodObject<{
         junk: "junk";
     }>>;
     targetMailbox: z.ZodOptional<z.ZodString>;
-}, z.core.$strip>;
+}, z.core.$strict>;
 export declare const mailUndoMoveSchema: z.ZodObject<{
     undoTokens: z.ZodArray<z.ZodString>;
     confirm: z.ZodOptional<z.ZodBoolean>;
     dryRun: z.ZodOptional<z.ZodBoolean>;
-}, z.core.$strip>;
+}, z.core.$strict>;

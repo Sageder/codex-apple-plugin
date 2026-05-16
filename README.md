@@ -14,6 +14,23 @@ calendar, or reminders indexes.
 
 ## Tool Surface
 
+All three surfaces follow the same MCP shape:
+
+- Tool names are prefixed by surface: `mail_*`, `calendar_*`, and
+  `reminders_*`.
+- List/search/read tools return opaque handles for follow-up reads or actions.
+- Guarded mutating tools accept `confirm` and `dryRun`, use the shared write
+  guard, and return `allowed: false` plus a preview or target list when blocked.
+  `mail_compose` is draft-only and intentionally outside the guard.
+- `APPLE_PRODUCTIVITY_WRITE_MODE=draft` is the default safe mode;
+  `confirm` requires `confirm: true`; `direct` writes locally.
+
+| Surface | Read and Discovery | Mutations | Native Path |
+| --- | --- | --- | --- |
+| Mail | account/mailbox listing, metadata search, context retrieval, selected reads | compose, send, move, undo move, archive, delete-to-trash, junk | Swift ScriptingBridge/Apple Events helper |
+| Calendar | calendar listing, event search, selected event reads, show in Calendar.app | create, update, delete/exclude occurrence | Swift/EventKit package helper |
+| Reminders | list listing, reminder search, selected reminder reads | create, update, complete/uncomplete, delete, move list | Swift/EventKit helper binary |
+
 ### Mail
 
 Read and discovery tools:
@@ -173,6 +190,7 @@ Run smoke scripts against local Apple apps:
 ```bash
 npm run smoke:mail
 npm run smoke:calendar
+npm run smoke:reminders
 ```
 
 `npm run build` compiles the Swift Package helper for Mail and Calendar and

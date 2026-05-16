@@ -7,7 +7,12 @@ export type ProductivityWriteAction =
   | "mail.move"
   | "calendar.create"
   | "calendar.update"
-  | "calendar.delete";
+  | "calendar.delete"
+  | "reminders.create"
+  | "reminders.update"
+  | "reminders.complete"
+  | "reminders.delete"
+  | "reminders.move";
 
 export type WriteAction = ProductivityWriteAction | "send" | "archive" | "delete" | "move";
 

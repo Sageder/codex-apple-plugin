@@ -75,6 +75,7 @@ export declare class MailService {
     }): Promise<unknown>;
     archive(args: MailWriteArgs): Promise<{
         mode: import("../config.js").WriteMode;
+        allowed: boolean;
         moved: boolean;
         targetRole: MailMoveRole | undefined;
         targetMailbox: string | undefined;
@@ -93,6 +94,7 @@ export declare class MailService {
             toMailbox: string;
         }[];
         mode?: undefined;
+        allowed?: undefined;
         targetRole?: undefined;
         targetMailbox?: undefined;
         count?: undefined;
@@ -101,6 +103,7 @@ export declare class MailService {
     }>;
     delete(args: MailWriteArgs): Promise<{
         mode: import("../config.js").WriteMode;
+        allowed: boolean;
         moved: boolean;
         targetRole: MailMoveRole | undefined;
         targetMailbox: string | undefined;
@@ -119,6 +122,7 @@ export declare class MailService {
             toMailbox: string;
         }[];
         mode?: undefined;
+        allowed?: undefined;
         targetRole?: undefined;
         targetMailbox?: undefined;
         count?: undefined;
@@ -127,6 +131,7 @@ export declare class MailService {
     }>;
     moveToJunk(args: MailWriteArgs): Promise<{
         mode: import("../config.js").WriteMode;
+        allowed: boolean;
         moved: boolean;
         targetRole: MailMoveRole | undefined;
         targetMailbox: string | undefined;
@@ -145,6 +150,7 @@ export declare class MailService {
             toMailbox: string;
         }[];
         mode?: undefined;
+        allowed?: undefined;
         targetRole?: undefined;
         targetMailbox?: undefined;
         count?: undefined;
@@ -153,6 +159,7 @@ export declare class MailService {
     }>;
     move(args: MailMoveArgs, action?: "mail.archive" | "mail.delete" | "mail.move"): Promise<{
         mode: import("../config.js").WriteMode;
+        allowed: boolean;
         moved: boolean;
         targetRole: MailMoveRole | undefined;
         targetMailbox: string | undefined;
@@ -171,6 +178,7 @@ export declare class MailService {
             toMailbox: string;
         }[];
         mode?: undefined;
+        allowed?: undefined;
         targetRole?: undefined;
         targetMailbox?: undefined;
         count?: undefined;
@@ -179,6 +187,7 @@ export declare class MailService {
     }>;
     undoMove(args: MailUndoMoveArgs): Promise<{
         mode: import("../config.js").WriteMode;
+        allowed: boolean;
         moved: boolean;
         count: number;
         targets: import("./types.js").MailUndoToken[];
@@ -195,6 +204,7 @@ export declare class MailService {
             toMailbox: string;
         }[];
         mode?: undefined;
+        allowed?: undefined;
         count?: undefined;
         targets?: undefined;
         reason?: undefined;
