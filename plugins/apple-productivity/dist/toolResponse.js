@@ -1,6 +1,6 @@
-import { AppleBridgeError } from "./appleBridge.js";
 import { SwiftCalendarBridgeError } from "./calendar/swiftCalendarBridge.js";
 import { RemindersNativeBridgeError } from "./reminders/nativeBridge.js";
+import { SwiftBridgeError } from "./swiftBridge.js";
 export function jsonResponse(data) {
     return {
         content: [
@@ -12,7 +12,7 @@ export function jsonResponse(data) {
     };
 }
 export function errorResponse(error) {
-    const data = error instanceof AppleBridgeError
+    const data = error instanceof SwiftBridgeError
         ? { error: error.message, details: error.stderr }
         : error instanceof SwiftCalendarBridgeError
             ? { error: error.message, details: error.stderr }

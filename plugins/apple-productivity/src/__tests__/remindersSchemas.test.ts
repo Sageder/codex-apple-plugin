@@ -15,7 +15,7 @@ describe("reminder schemas", () => {
     });
   });
 
-  it("accepts power-user fields supported by the JXA backend", () => {
+  it("accepts power-user fields supported by the Swift/EventKit backend", () => {
     expect(
       remindersCreateSchema.parse({
         name: "Synthetic task",

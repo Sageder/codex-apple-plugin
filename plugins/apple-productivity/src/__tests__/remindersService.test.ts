@@ -20,7 +20,7 @@ const baseConfig: RuntimeConfig = {
   maxBodyChars: 12000,
   retrievalCandidateLimit: 30,
   contextTopK: 5,
-  osascriptTimeoutMs: 15000,
+  helperTimeoutMs: 15000,
   defaultRemindersList: "Tasks"
 };
 

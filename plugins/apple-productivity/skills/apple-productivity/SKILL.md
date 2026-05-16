@@ -8,8 +8,8 @@ description: Use Apple Mail, Apple Calendar, and Apple Reminders from Codex thro
 Use this skill when a task should access local Apple apps, especially Apple Mail
 Apple Calendar, or Apple Reminders.
 
-Calendar and Reminders access use Swift/EventKit helpers. Mail currently uses
-JXA.
+Mail uses a Swift ScriptingBridge/Apple Events helper. Calendar and Reminders
+access use Swift/EventKit helpers.
 
 ## Mail workflow
 

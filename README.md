@@ -2,10 +2,10 @@
 
 Local Codex plugin for Apple Mail, Apple Calendar, and Apple Reminders.
 
-Mail currently talks to macOS through JXA via `/usr/bin/osascript`. Calendar
-uses a local Swift/EventKit helper, and Reminders uses a native Swift/EventKit
-helper. The plugin does not store persistent mail, calendar, or reminders
-indexes; retrieval is live and ephemeral.
+Mail talks to macOS through a local Swift ScriptingBridge/Apple Events helper.
+Calendar and Reminders use local Swift/EventKit helpers. The plugin does not
+store persistent mail, calendar, or reminders indexes; retrieval is live and
+ephemeral.
 
 ## Tools
 
@@ -28,7 +28,7 @@ move history database is stored.
 
 The first Calendar or Reminders action on a Mac may trigger macOS privacy
 prompts. If local Apple data is slow to authorize or sync, increase
-`APPLE_PRODUCTIVITY_OSASCRIPT_TIMEOUT_MS`.
+`APPLE_PRODUCTIVITY_HELPER_TIMEOUT_MS`.
 
 ## Development
 
@@ -51,7 +51,7 @@ Mail and Calendar share one access mode:
 - `APPLE_PRODUCTIVITY_MAX_BODY_CHARS`
 - `APPLE_PRODUCTIVITY_RETRIEVAL_CANDIDATE_LIMIT`
 - `APPLE_PRODUCTIVITY_CONTEXT_TOP_K`
-- `APPLE_PRODUCTIVITY_OSASCRIPT_TIMEOUT_MS` defaults to `60000`
+- `APPLE_PRODUCTIVITY_HELPER_TIMEOUT_MS` defaults to `60000`
 - `APPLE_PRODUCTIVITY_DEFAULT_REMINDERS_LIST`
 
 The default write mode is `draft`, which prevents irreversible writes after

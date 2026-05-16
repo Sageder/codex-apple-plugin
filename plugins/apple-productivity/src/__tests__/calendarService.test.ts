@@ -19,7 +19,7 @@ const baseConfig: RuntimeConfig = {
   maxBodyChars: 500,
   retrievalCandidateLimit: 30,
   contextTopK: 5,
-  osascriptTimeoutMs: 15000
+  helperTimeoutMs: 15000
 };
 
 const createArgs = {
@@ -36,7 +36,7 @@ const handle = encodeCalendarEventHandle({
 });
 
 describe("calendar service write policy", () => {
-  it("previews create events in draft mode without calling JXA", async () => {
+  it("previews create events in draft mode without calling the helper", async () => {
     const bridge = new FakeBridge();
     const service = new CalendarService(bridge, baseConfig);
 

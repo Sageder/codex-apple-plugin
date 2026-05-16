@@ -1,4 +1,4 @@
-import { AppleBridge } from "../appleBridge.js";
+import { SwiftBridge } from "../swiftBridge.js";
 import type { RuntimeConfig } from "../config.js";
 import type { MailAccount, MailboxInfo, MailMoveRole, MailMessageBody, MailMessageSummary } from "./types.js";
 export interface MailSearchArgs {
@@ -47,7 +47,7 @@ export interface MailUndoMoveArgs {
 export declare class MailService {
     private readonly bridge;
     private readonly config;
-    constructor(bridge: AppleBridge, config: RuntimeConfig);
+    constructor(bridge: SwiftBridge, config: RuntimeConfig);
     listAccounts(): Promise<{
         accounts: MailAccount[];
     }>;

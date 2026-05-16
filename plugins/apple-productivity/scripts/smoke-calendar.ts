@@ -3,7 +3,7 @@ import { SwiftCalendarBridge } from "../src/calendar/swiftCalendarBridge.js";
 import { getRuntimeConfig } from "../src/config.js";
 
 const config = getRuntimeConfig();
-const calendar = new CalendarService(new SwiftCalendarBridge({ timeoutMs: config.osascriptTimeoutMs }), config);
+const calendar = new CalendarService(new SwiftCalendarBridge({ timeoutMs: config.helperTimeoutMs }), config);
 
 const calendars = await calendar.listCalendars();
 const writableCount = calendars.calendars.filter((entry) => entry.writable).length;
