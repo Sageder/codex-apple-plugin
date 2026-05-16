@@ -1,9 +1,9 @@
-import { AppleBridge } from "../src/appleBridge.js";
 import { getRuntimeConfig } from "../src/config.js";
 import { MailService } from "../src/mail/mailService.js";
+import { SwiftBridge } from "../src/swiftBridge.js";
 
 const config = getRuntimeConfig();
-const mail = new MailService(new AppleBridge({ timeoutMs: config.osascriptTimeoutMs }), config);
+const mail = new MailService(new SwiftBridge({ timeoutMs: config.helperTimeoutMs }), config);
 
 const accounts = await mail.listAccounts();
 console.log(`Apple Mail accounts: ${accounts.accounts.length}`);
@@ -23,4 +23,3 @@ const context = await mail.retrieveContext({
   maxBodyChars: 4000
 });
 console.log(`Context snippets: ${context.snippets.length}`);
-

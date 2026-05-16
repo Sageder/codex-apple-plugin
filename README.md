@@ -3,8 +3,9 @@
 Local Codex plugin for Apple Mail first, with the shared bridge ready for Apple
 Calendar and Reminders next.
 
-The plugin talks to macOS apps through JXA via `/usr/bin/osascript`; it does not
-store a persistent mail index. Retrieval is live and ephemeral.
+The plugin talks to macOS apps through a local Swift helper using
+ScriptingBridge/Apple Events; it does not store a persistent mail index.
+Retrieval is live and ephemeral.
 
 ## Mail tools
 
@@ -34,7 +35,7 @@ Write behavior is controlled by:
 - `APPLE_PRODUCTIVITY_MAX_BODY_CHARS`
 - `APPLE_PRODUCTIVITY_RETRIEVAL_CANDIDATE_LIMIT`
 - `APPLE_PRODUCTIVITY_CONTEXT_TOP_K`
-- `APPLE_PRODUCTIVITY_OSASCRIPT_TIMEOUT_MS` defaults to `60000`
+- `APPLE_PRODUCTIVITY_HELPER_TIMEOUT_MS` defaults to `60000`
 
 The default write mode is `draft`. Delete means "move to Trash/Deleted Items",
 not permanent deletion.

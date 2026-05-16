@@ -1,4 +1,4 @@
-import { AppleBridgeError } from "./appleBridge.js";
+import { SwiftBridgeError } from "./swiftBridge.js";
 
 export function jsonResponse(data: unknown) {
   return {
@@ -13,7 +13,7 @@ export function jsonResponse(data: unknown) {
 
 export function errorResponse(error: unknown) {
   const data =
-    error instanceof AppleBridgeError
+    error instanceof SwiftBridgeError
       ? { error: error.message, details: error.stderr }
       : { error: error instanceof Error ? error.message : String(error) };
 
@@ -27,4 +27,3 @@ export function errorResponse(error: unknown) {
     ]
   };
 }
-

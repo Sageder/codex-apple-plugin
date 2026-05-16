@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Local Codex plugin for Apple Mail, Calendar, and Reminders workflows.",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && swift build --package-path plugins/apple-productivity/swift",
     "test": "vitest run",
     "check": "npm run build && npm run test",
     "smoke:mail": "tsx plugins/apple-productivity/scripts/smoke-mail.ts"

@@ -4,6 +4,6 @@ export interface RuntimeConfig {
     maxBodyChars: number;
     retrievalCandidateLimit: number;
     contextTopK: number;
-    osascriptTimeoutMs: number;
+    helperTimeoutMs: number;
 }
 export declare function getRuntimeConfig(env?: NodeJS.ProcessEnv): RuntimeConfig;

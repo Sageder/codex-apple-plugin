@@ -1,7 +1,6 @@
 import { decideWrite } from "../writeGuard.js";
 import { decodeMessageHandle, decodeUndoToken, encodeMessageHandle, encodeUndoToken } from "./handle.js";
 import { rankContext, scoreSummary } from "./retrieval.js";
-import { composeMessageScript, listMailboxesScript, listAccountsScript, moveMessagesScript, readMessagesScript, searchRecipientMessagesScript, searchMessagesScript, searchSubjectMessagesScript, sendMessageScript } from "./jxaScripts.js";
 export class MailService {
     bridge;
     config;
@@ -10,11 +9,11 @@ export class MailService {
         this.config = config;
     }
     async listAccounts() {
-        const accounts = await this.bridge.runJxa(listAccountsScript);
+        const accounts = await this.bridge.call("mail.listAccounts");
         return { accounts };
     }
     async listMailboxes() {
-        return this.bridge.runJxa(listMailboxesScript);
+        return this.bridge.call("mail.listMailboxes");
     }
     async search(args) {
         const input = {
@@ -33,12 +32,7 @@ export class MailService {
             limit: args.limit ?? 20,
             maxScanPerMailbox: args.maxScanPerMailbox ?? 200
         };
-        const script = shouldUseSubjectFastPath(input)
-            ? searchSubjectMessagesScript
-            : shouldUseRecipientFastPath(input)
-                ? searchRecipientMessagesScript
-                : searchMessagesScript;
-        const raw = await this.bridge.runJxa(script, input);
+        const raw = await this.bridge.call("mail.search", input);
         return {
             messages: raw.map(encodeSummary).sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
         };
@@ -65,14 +59,14 @@ export class MailService {
     }
     async read(args) {
         const rawHandles = args.handles.map(decodeMessageHandle);
-        const raw = await this.bridge.runJxa(readMessagesScript, {
+        const raw = await this.bridge.call("mail.read", {
             handles: rawHandles,
             maxBodyChars: args.maxBodyChars ?? this.config.maxBodyChars
         });
         return { messages: raw.map(encodeBody) };
     }
     async compose(args) {
-        return this.bridge.runJxa(composeMessageScript, {
+        return this.bridge.call("mail.compose", {
             ...args,
             cc: args.cc ?? [],
             bcc: args.bcc ?? [],
@@ -88,7 +82,7 @@ export class MailService {
             }
             return { mode: decision.mode, sent: false, preview: previewMessage(args), reason: decision.reason };
         }
-        return this.bridge.runJxa(sendMessageScript, {
+        return this.bridge.call("mail.send", {
             ...args,
             cc: args.cc ?? [],
             bcc: args.bcc ?? []
@@ -117,7 +111,7 @@ export class MailService {
                 reason: decision.reason
             };
         }
-        const result = await this.bridge.runJxa(moveMessagesScript, {
+        const result = await this.bridge.call("mail.move", {
             handles: decoded,
             role: args.targetRole,
             targetRole: args.targetRole,
@@ -149,7 +143,7 @@ export class MailService {
         const moved = [];
         for (let index = 0; index < tokens.length; index += 1) {
             const token = tokens[index];
-            const result = await this.bridge.runJxa(moveMessagesScript, {
+            const result = await this.bridge.call("mail.move", {
                 handles: [handles[index]],
                 targetMailbox: token.fromMailbox
             });
@@ -157,18 +151,6 @@ export class MailService {
         }
         return { moved };
     }
-}
-function shouldUseRecipientFastPath(input) {
-    return Boolean(input.recipient &&
-        !input.query &&
-        !input.sender &&
-        !input.participant &&
-        !input.unreadOnly &&
-        !input.since &&
-        !input.before);
-}
-function shouldUseSubjectFastPath(input) {
-    return Boolean(input.subject);
 }
 function encodeSummary(raw) {
     return {

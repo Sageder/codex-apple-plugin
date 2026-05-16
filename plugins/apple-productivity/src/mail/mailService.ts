@@ -1,19 +1,8 @@
-import { AppleBridge } from "../appleBridge.js";
+import { SwiftBridge } from "../swiftBridge.js";
 import type { RuntimeConfig } from "../config.js";
 import { decideWrite } from "../writeGuard.js";
 import { decodeMessageHandle, decodeUndoToken, encodeMessageHandle, encodeUndoToken } from "./handle.js";
 import { rankContext, scoreSummary } from "./retrieval.js";
-import {
-  composeMessageScript,
-  listMailboxesScript,
-  listAccountsScript,
-  moveMessagesScript,
-  readMessagesScript,
-  searchRecipientMessagesScript,
-  searchMessagesScript,
-  searchSubjectMessagesScript,
-  sendMessageScript
-} from "./jxaScripts.js";
 import type {
   MailAccount,
   MailboxInfo,
@@ -77,17 +66,17 @@ export interface MailUndoMoveArgs {
 
 export class MailService {
   constructor(
-    private readonly bridge: AppleBridge,
+    private readonly bridge: SwiftBridge,
     private readonly config: RuntimeConfig
   ) {}
 
   async listAccounts(): Promise<{ accounts: MailAccount[] }> {
-    const accounts = await this.bridge.runJxa<MailAccount[]>(listAccountsScript);
+    const accounts = await this.bridge.call<MailAccount[]>("mail.listAccounts");
     return { accounts };
   }
 
   async listMailboxes(): Promise<{ mailboxes: MailboxInfo[] }> {
-    return this.bridge.runJxa<{ mailboxes: MailboxInfo[] }>(listMailboxesScript);
+    return this.bridge.call<{ mailboxes: MailboxInfo[] }>("mail.listMailboxes");
   }
 
   async search(args: MailSearchArgs): Promise<{ messages: MailMessageSummary[] }> {
@@ -108,12 +97,7 @@ export class MailService {
       maxScanPerMailbox: args.maxScanPerMailbox ?? 200
     };
 
-    const script = shouldUseSubjectFastPath(input)
-      ? searchSubjectMessagesScript
-      : shouldUseRecipientFastPath(input)
-        ? searchRecipientMessagesScript
-        : searchMessagesScript;
-    const raw = await this.bridge.runJxa<RawMessageSummary[]>(script, input);
+    const raw = await this.bridge.call<RawMessageSummary[]>("mail.search", input);
     return {
       messages: raw.map(encodeSummary).sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
     };
@@ -144,7 +128,7 @@ export class MailService {
 
   async read(args: MailReadArgs): Promise<{ messages: MailMessageBody[] }> {
     const rawHandles = args.handles.map(decodeMessageHandle);
-    const raw = await this.bridge.runJxa<RawMessageBody[]>(readMessagesScript, {
+    const raw = await this.bridge.call<RawMessageBody[]>("mail.read", {
       handles: rawHandles,
       maxBodyChars: args.maxBodyChars ?? this.config.maxBodyChars
     });
@@ -153,7 +137,7 @@ export class MailService {
   }
 
   async compose(args: MailComposeArgs) {
-    return this.bridge.runJxa(composeMessageScript, {
+    return this.bridge.call("mail.compose", {
       ...args,
       cc: args.cc ?? [],
       bcc: args.bcc ?? [],
@@ -172,7 +156,7 @@ export class MailService {
       return { mode: decision.mode, sent: false, preview: previewMessage(args), reason: decision.reason };
     }
 
-    return this.bridge.runJxa(sendMessageScript, {
+    return this.bridge.call("mail.send", {
       ...args,
       cc: args.cc ?? [],
       bcc: args.bcc ?? []
@@ -207,7 +191,7 @@ export class MailService {
       };
     }
 
-    const result = await this.bridge.runJxa<{ moved: MoveResult[] }>(moveMessagesScript, {
+    const result = await this.bridge.call<{ moved: MoveResult[] }>("mail.move", {
       handles: decoded,
       role: args.targetRole,
       targetRole: args.targetRole,
@@ -242,7 +226,7 @@ export class MailService {
     const moved: Array<ReturnType<typeof encodeMovedItem>> = [];
     for (let index = 0; index < tokens.length; index += 1) {
       const token = tokens[index];
-      const result = await this.bridge.runJxa<{ moved: MoveResult[] }>(moveMessagesScript, {
+      const result = await this.bridge.call<{ moved: MoveResult[] }>("mail.move", {
         handles: [handles[index]],
         targetMailbox: token.fromMailbox
       });
@@ -251,22 +235,6 @@ export class MailService {
 
     return { moved };
   }
-}
-
-function shouldUseRecipientFastPath(input: SearchMessagesInput): boolean {
-  return Boolean(
-    input.recipient &&
-      !input.query &&
-      !input.sender &&
-      !input.participant &&
-      !input.unreadOnly &&
-      !input.since &&
-      !input.before
-  );
-}
-
-function shouldUseSubjectFastPath(input: SearchMessagesInput): boolean {
-  return Boolean(input.subject);
 }
 
 function encodeSummary(raw: RawMessageSummary): MailMessageSummary {
