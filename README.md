@@ -1,89 +1,150 @@
-# Apple Productivity Codex Plugin
+# Apple Productivity MCP Plugin
 
-Local Codex plugin for Apple Mail, Apple Calendar, and Apple Reminders.
+Use Apple Mail, Calendar, and Reminders from a local MCP client on macOS.
 
-The plugin exposes one MCP server, `apple-productivity`, with three local app
-surfaces:
+This repository contains a local Codex plugin that exposes one MCP server,
+`apple-productivity`. It talks to the built-in Apple apps through local Swift
+helpers and returns live data from the Mac it is running on.
 
-- Apple Mail through a Swift ScriptingBridge/Apple Events helper.
-- Apple Calendar through a Swift/EventKit helper.
-- Apple Reminders through a Swift/EventKit helper.
+![Apple Productivity icon](plugins/apple-productivity/assets/apple-productivity.png)
 
-Reads are live and ephemeral. The plugin does not store persistent mail,
-calendar, or reminders indexes.
+## Features
 
-## Tool Surface
+- Search, read, draft, send, archive, delete-to-trash, junk, and move Apple Mail
+  messages.
+- List calendars, search/read/show events, and create/update/delete Calendar
+  events.
+- List reminder lists, search/read reminders, and create/update/complete/delete
+  or move reminders.
+- Shared write guard for mutating operations, with safe draft mode by default.
+- Live, ephemeral reads. The plugin does not build or store a persistent local
+  mail, calendar, or reminders index.
 
-All three surfaces follow the same MCP shape:
+## Requirements
 
-- Tool names are prefixed by surface: `mail_*`, `calendar_*`, and
-  `reminders_*`.
-- List/search/read tools return opaque handles for follow-up reads or actions.
-- Guarded mutating tools accept `confirm` and `dryRun`, use the shared write
-  guard, and return `allowed: false` plus a preview or target list when blocked.
-  `mail_compose` is draft-only and intentionally outside the guard.
-- `APPLE_PRODUCTIVITY_WRITE_MODE=draft` is the default safe mode;
-  `confirm` requires `confirm: true`; `direct` writes locally.
+- macOS with Apple Mail, Calendar, and Reminders available.
+- Node.js and npm.
+- Xcode Command Line Tools, including `xcrun` and Swift.
+- Local app permissions granted when macOS prompts for Apple Events, Calendar,
+  or Reminders access.
 
-| Surface | Read and Discovery | Mutations | Native Path |
-| --- | --- | --- | --- |
-| Mail | account/mailbox listing, metadata search, context retrieval, selected reads | compose, send, move, undo move, archive, delete-to-trash, junk | Swift ScriptingBridge/Apple Events helper |
-| Calendar | calendar listing, event search, selected event reads, show in Calendar.app | create, update, delete/exclude occurrence | Swift/EventKit package helper |
-| Reminders | list listing, reminder search, selected reminder reads | create, update, complete/uncomplete, delete, move list | Swift/EventKit helper binary |
+## Quick Start
+
+Clone and build the repository:
+
+```bash
+git clone <repo-url>
+cd codex-apple-plugin
+npm install
+npm run build
+```
+
+Then point your MCP client at the built server:
+
+```json
+{
+  "mcpServers": {
+    "apple-productivity": {
+      "command": "node",
+      "args": [
+        "/absolute/path/to/codex-apple-plugin/plugins/apple-productivity/dist/index.js"
+      ],
+      "env": {
+        "APPLE_PRODUCTIVITY_WRITE_MODE": "draft",
+        "APPLE_PRODUCTIVITY_HELPER_TIMEOUT_MS": "60000"
+      }
+    }
+  }
+}
+```
+
+The plugin package also includes
+[`.mcp.json`](plugins/apple-productivity/.mcp.json) for local plugin loading
+flows that run from `plugins/apple-productivity`.
+
+## Safety Model
+
+Writes are controlled by `APPLE_PRODUCTIVITY_WRITE_MODE`:
+
+| Mode | Behavior |
+| --- | --- |
+| `draft` | Default. Mail sends become drafts or previews where possible; Calendar and Reminders writes return previews. |
+| `confirm` | Mutating tools write only when the request includes `confirm: true`. |
+| `direct` | Mutating tools write locally without an extra confirmation flag. Use only in trusted local setups. |
+
+Every guarded write tool also accepts `dryRun: true`.
+
+Important delete semantics:
+
+- Mail delete means move to the account Trash or Deleted mailbox. It does not
+  permanently expunge mail.
+- Calendar delete removes the selected event or excludes a recurring
+  occurrence.
+- Reminder delete is a real Reminders deletion.
+
+`mail_compose` is intentionally outside the write guard because it only opens a
+visible compose window or creates a draft.
+
+## Configuration
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `APPLE_PRODUCTIVITY_WRITE_MODE` | `draft` | `draft`, `confirm`, or `direct`. |
+| `APPLE_PRODUCTIVITY_MAX_BODY_CHARS` | `12000` | Maximum body or notes characters returned by read-style tools. |
+| `APPLE_PRODUCTIVITY_RETRIEVAL_CANDIDATE_LIMIT` | `30` | Default Mail retrieval candidate count. |
+| `APPLE_PRODUCTIVITY_CONTEXT_TOP_K` | `5` | Default Mail retrieval snippet count. |
+| `APPLE_PRODUCTIVITY_HELPER_TIMEOUT_MS` | `60000` | Swift helper timeout in milliseconds. |
+| `APPLE_PRODUCTIVITY_DEFAULT_REMINDERS_LIST` | unset | Optional default Reminders list name or identifier. |
+
+If Apple data is slow to authorize or sync, increase
+`APPLE_PRODUCTIVITY_HELPER_TIMEOUT_MS`.
+
+## Tools
 
 ### Mail
 
-Read and discovery tools:
+Read and discovery:
 
-- `mail_list_accounts` lists configured Apple Mail accounts, addresses, and
-  mailbox names.
-- `mail_list_mailboxes` lists mailboxes with inferred roles such as inbox,
-  sent, archive, trash, junk, and other.
-- `mail_search` searches live message metadata and returns message handles.
-- `mail_retrieve_context` searches candidate messages, reads bounded bodies in
-  memory, and returns ranked snippets.
-- `mail_read` reads selected messages by handle with body length limits.
+- `mail_list_accounts`
+- `mail_list_mailboxes`
+- `mail_search`
+- `mail_retrieve_context`
+- `mail_read`
 
-Write and action tools:
+Actions:
 
-- `mail_compose` creates a visible Apple Mail compose window or draft.
-- `mail_send` sends when the write guard permits it; otherwise it drafts or
-  returns a preview.
-- `mail_move` moves messages to a role mailbox or exact mailbox name.
-- `mail_undo_move` moves messages back using undo tokens returned by prior move
-  actions.
-- `mail_archive`, `mail_delete`, and `mail_junk` are role-specific move helpers.
+- `mail_compose`
+- `mail_send`
+- `mail_move`
+- `mail_undo_move`
+- `mail_archive`
+- `mail_delete`
+- `mail_junk`
 
-Mail behavior:
+Notes:
 
 - `mail_search` supports inbox, sent, archive, trash, junk, all, and exact
   mailbox scopes.
-- Use `scope: "sent"` plus `recipient` for sent-mail questions.
-- Delete means move to Trash or Deleted Items, not permanent expunge.
-- Move, archive, delete, and junk actions return stateless undo tokens. No local
-  move history database is stored.
+- For sent-mail questions, use `scope: "sent"` with `recipient`.
+- Move/archive/delete/junk actions return stateless undo tokens. The plugin does
+  not store a move history database.
 
 ### Calendar
 
-Read and discovery tools:
+Read and discovery:
 
-- `calendar_list_calendars` lists EventKit-visible calendars and writable
-  status.
-- `calendar_search_events` searches live Calendar.app events by date window,
-  calendar, and metadata.
-- `calendar_read_event` reads one event by handle with bounded notes previews.
-- `calendar_show_event` opens Calendar.app and shows the selected event.
+- `calendar_list_calendars`
+- `calendar_search_events`
+- `calendar_read_event`
+- `calendar_show_event`
 
-Write and action tools:
+Actions:
 
-- `calendar_create_event` creates an event when the write guard permits it;
-  otherwise it returns a preview.
-- `calendar_update_event` updates an event or recurring occurrence when the
-  write guard permits it; otherwise it returns a preview.
-- `calendar_delete_event` deletes an event or excludes a recurring occurrence
-  when the write guard permits it.
+- `calendar_create_event`
+- `calendar_update_event`
+- `calendar_delete_event`
 
-Calendar behavior:
+Notes:
 
 - Create requests require `calendarId` or `calendarName`.
 - Update and delete requests require `span: "this"` for one occurrence or
@@ -94,70 +155,33 @@ Calendar behavior:
 
 ### Reminders
 
-Read and discovery tools:
+Read and discovery:
 
-- `reminders_list_lists` lists Apple Reminders lists and bounded reminder counts.
-- `reminders_search` searches live reminder metadata and returns reminder
-  handles.
-- `reminders_read` reads selected reminders by handle with body length limits.
+- `reminders_list_lists`
+- `reminders_search`
+- `reminders_read`
 
-Write and action tools:
+Actions:
 
-- `reminders_create` creates a reminder when the write guard permits it;
-  otherwise it returns a preview.
-- `reminders_update` patches a reminder when the write guard permits it;
-  otherwise it returns a preview.
-- `reminders_complete` marks reminders complete or incomplete.
-- `reminders_delete` deletes selected reminders.
-- `reminders_move` moves reminders to another list.
+- `reminders_create`
+- `reminders_update`
+- `reminders_complete`
+- `reminders_delete`
+- `reminders_move`
 
-Reminders behavior:
+Notes:
 
-- Supported fields include title, notes/body, due date, reminder dates and
-  alarms, priority, URL, recurrence, completion state, and list movement.
-- `APPLE_PRODUCTIVITY_DEFAULT_REMINDERS_LIST` can select a default target list
-  for reminder creation.
-- Tags, subtasks, and attachments are intentionally unsupported until Apple
-  exposes a stable local automation path for them.
-- Reminder delete is a real reminder deletion, so it is guarded by the shared
-  write mode.
+- Supported fields include title, notes/body, due date, reminder alarms,
+  priority, URL, recurrence, completion state, and list movement.
+- Tags, subtasks, and attachments are not supported.
 
-## Safety
+## Privacy
 
-App-data writes for Mail, Calendar, and Reminders use the shared write mode:
+The server runs locally and reads from local Apple apps. It does not persist mail
+bodies, calendar notes, reminder notes, or search indexes.
 
-- `APPLE_PRODUCTIVITY_WRITE_MODE=draft` is the safe default. Mail sends become
-  drafts or previews where possible; Calendar and Reminders writes return
-  previews.
-- `APPLE_PRODUCTIVITY_WRITE_MODE=confirm` requires `confirm: true` before a
-  mutating tool writes locally.
-- `APPLE_PRODUCTIVITY_WRITE_MODE=direct` allows local writes without an extra
-  confirmation flag.
-
-Every guarded write tool accepts `dryRun: true`. `mail_compose` is intentionally
-outside the write guard because it only opens or creates a draft. Keep `direct`
-mode for trusted local setups only.
-
-## Configuration
-
-Environment variables:
-
-- `APPLE_PRODUCTIVITY_WRITE_MODE`: `draft`, `confirm`, or `direct`. Defaults to
-  `draft`.
-- `APPLE_PRODUCTIVITY_MAX_BODY_CHARS`: maximum body or notes characters returned
-  by read-style tools. Defaults to `12000`.
-- `APPLE_PRODUCTIVITY_RETRIEVAL_CANDIDATE_LIMIT`: default Mail retrieval
-  candidate count. Defaults to `30`.
-- `APPLE_PRODUCTIVITY_CONTEXT_TOP_K`: default Mail retrieval snippet count.
-  Defaults to `5`.
-- `APPLE_PRODUCTIVITY_HELPER_TIMEOUT_MS`: helper process timeout. Defaults to
-  `60000`.
-- `APPLE_PRODUCTIVITY_DEFAULT_REMINDERS_LIST`: optional default Reminders list
-  name or identifier.
-
-The first Calendar or Reminders action on a Mac may trigger macOS privacy
-prompts. If local Apple data is slow to authorize or sync, increase
-`APPLE_PRODUCTIVITY_HELPER_TIMEOUT_MS`.
+MCP clients can still display or log tool output. Keep read limits conservative
+and avoid sharing generated logs when they may contain personal content.
 
 ## Development
 
@@ -193,6 +217,20 @@ npm run smoke:calendar
 npm run smoke:reminders
 ```
 
-`npm run build` compiles the Swift Package helper for Mail and Calendar and
-also builds `plugins/apple-productivity/dist/reminders/reminders-helper` from
-the Reminders Swift source.
+`npm run build` compiles the Swift package helper used by Mail and also builds
+`plugins/apple-productivity/dist/reminders/reminders-helper` from the Reminders
+Swift source. The Calendar helper is run through `xcrun swift`.
+
+## Repository Layout
+
+```text
+plugins/apple-productivity/
+  .codex-plugin/plugin.json      Plugin metadata
+  .mcp.json                      Local MCP server config
+  assets/                        Plugin icons
+  helpers/calendar-tool.swift    Calendar EventKit helper
+  scripts/                       Local smoke scripts
+  skills/                        Codex skill instructions
+  src/                           TypeScript MCP server and tests
+  swift/                         Swift package for Mail helper
+```
