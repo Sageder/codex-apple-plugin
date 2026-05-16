@@ -8,7 +8,8 @@
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "check": "npm run build && npm run test",
-    "smoke:mail": "tsx plugins/apple-productivity/scripts/smoke-mail.ts"
+    "smoke:mail": "tsx plugins/apple-productivity/scripts/smoke-mail.ts",
+    "smoke:calendar": "tsx plugins/apple-productivity/scripts/smoke-calendar.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",

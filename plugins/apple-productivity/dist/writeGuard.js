@@ -1,9 +1,10 @@
 export function decideWrite(config, action, confirm, dryRun) {
+    const label = actionLabel(action);
     if (dryRun) {
         return {
             allowed: false,
             mode: config.writeMode,
-            reason: `${action} dry run requested`
+            reason: `${label} dry run requested`
         };
     }
     if (config.writeMode === "direct") {
@@ -25,5 +26,8 @@ export function decideWrite(config, action, confirm, dryRun) {
         mode: config.writeMode,
         reason: "draft mode prevents irreversible writes"
     };
+}
+function actionLabel(action) {
+    return action.includes(".") ? action : `mail.${action}`;
 }
 //# sourceMappingURL=writeGuard.js.map

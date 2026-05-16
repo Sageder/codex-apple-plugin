@@ -151,7 +151,7 @@ export declare class MailService {
         targets?: undefined;
         reason?: undefined;
     }>;
-    move(args: MailMoveArgs, action?: "archive" | "delete" | "move"): Promise<{
+    move(args: MailMoveArgs, action?: "mail.archive" | "mail.delete" | "mail.move"): Promise<{
         mode: import("../config.js").WriteMode;
         moved: boolean;
         targetRole: MailMoveRole | undefined;

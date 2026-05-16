@@ -6,11 +6,11 @@ export declare const mailSearchSchema: z.ZodObject<{
     mailbox: z.ZodOptional<z.ZodString>;
     scope: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
         archive: "archive";
+        all: "all";
         inbox: "inbox";
         sent: "sent";
         trash: "trash";
         junk: "junk";
-        all: "all";
         mailbox: "mailbox";
     }>>>;
     sender: z.ZodOptional<z.ZodString>;
@@ -30,11 +30,11 @@ export declare const mailRetrieveContextSchema: z.ZodObject<{
     mailbox: z.ZodOptional<z.ZodString>;
     scope: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
         archive: "archive";
+        all: "all";
         inbox: "inbox";
         sent: "sent";
         trash: "trash";
         junk: "junk";
-        all: "all";
         mailbox: "mailbox";
     }>>>;
     sender: z.ZodOptional<z.ZodString>;

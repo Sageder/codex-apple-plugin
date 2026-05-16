@@ -1,6 +1,15 @@
 import type { RuntimeConfig } from "./config.js";
 
-export type WriteAction = "send" | "archive" | "delete" | "move";
+export type ProductivityWriteAction =
+  | "mail.send"
+  | "mail.archive"
+  | "mail.delete"
+  | "mail.move"
+  | "calendar.create"
+  | "calendar.update"
+  | "calendar.delete";
+
+export type WriteAction = ProductivityWriteAction | "send" | "archive" | "delete" | "move";
 
 export interface WriteDecision {
   allowed: boolean;
@@ -14,11 +23,13 @@ export function decideWrite(
   confirm?: boolean,
   dryRun?: boolean
 ): WriteDecision {
+  const label = actionLabel(action);
+
   if (dryRun) {
     return {
       allowed: false,
       mode: config.writeMode,
-      reason: `${action} dry run requested`
+      reason: `${label} dry run requested`
     };
   }
 
@@ -45,3 +56,6 @@ export function decideWrite(
   };
 }
 
+function actionLabel(action: WriteAction): string {
+  return action.includes(".") ? action : `mail.${action}`;
+}

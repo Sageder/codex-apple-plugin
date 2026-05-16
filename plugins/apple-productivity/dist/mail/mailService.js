@@ -80,7 +80,7 @@ export class MailService {
         });
     }
     async send(args) {
-        const decision = decideWrite(this.config, "send", args.confirm, args.dryRun);
+        const decision = decideWrite(this.config, "mail.send", args.confirm, args.dryRun);
         if (!decision.allowed) {
             if (this.config.writeMode === "draft" && !args.dryRun) {
                 const draft = await this.compose({ ...args, visible: true });
@@ -95,15 +95,15 @@ export class MailService {
         });
     }
     archive(args) {
-        return this.move({ ...args, targetRole: "archive" }, "archive");
+        return this.move({ ...args, targetRole: "archive" }, "mail.archive");
     }
     delete(args) {
-        return this.move({ ...args, targetRole: "trash" }, "delete");
+        return this.move({ ...args, targetRole: "trash" }, "mail.delete");
     }
     moveToJunk(args) {
-        return this.move({ ...args, targetRole: "junk" }, "move");
+        return this.move({ ...args, targetRole: "junk" }, "mail.move");
     }
-    async move(args, action = "move") {
+    async move(args, action = "mail.move") {
         const decision = decideWrite(this.config, action, args.confirm, args.dryRun);
         const decoded = args.handles.map(decodeMessageHandle);
         if (!decision.allowed) {
@@ -129,7 +129,7 @@ export class MailService {
         };
     }
     async undoMove(args) {
-        const decision = decideWrite(this.config, "move", args.confirm, args.dryRun);
+        const decision = decideWrite(this.config, "mail.move", args.confirm, args.dryRun);
         const tokens = args.undoTokens.map(decodeUndoToken);
         const handles = tokens.map((token) => ({
             account: token.account,
@@ -153,7 +153,7 @@ export class MailService {
                 handles: [handles[index]],
                 targetMailbox: token.fromMailbox
             });
-            moved.push(...result.moved.map((item) => encodeMovedItem(item, "undo")));
+            moved.push(...result.moved.map((item) => encodeMovedItem(item, "mail.move")));
         }
         return { moved };
     }

@@ -1,11 +1,14 @@
 ---
 name: apple-productivity
-description: Use Apple Mail from Codex through the local Apple Productivity MCP plugin. Trigger when the user asks to search, read, summarize, draft, send, archive, or delete Apple Mail messages, or asks about future Apple Calendar and Reminders support.
+description: Use Apple Mail and Apple Calendar from Codex through the local Apple Productivity MCP plugin. Trigger when the user asks to search, read, summarize, draft, send, archive, or delete Apple Mail messages, or to list calendars, search/read/create/update/delete/show Apple Calendar events.
 ---
 
 # Apple Productivity
 
-Use this skill when a task should access local Apple apps, especially Apple Mail.
+Use this skill when a task should access local Apple apps, especially Apple Mail
+or Apple Calendar.
+
+Calendar access uses the Swift/EventKit helper, not JXA.
 
 ## Mail workflow
 
@@ -19,6 +22,23 @@ Use this skill when a task should access local Apple apps, especially Apple Mail
 - Treat delete as moving messages to Trash/Deleted Items, not permanent deletion.
 - Keep undo tokens returned by move/archive/delete/junk actions if the user may want to reverse the move.
 
+## Calendar workflow
+
+- Use `calendar_list_calendars` before creating events unless the target calendar id is already known.
+- Use `calendar_search_events` for date-window and fuzzy event lookup.
+- Use `calendar_read_event` for selected events and keep notes previews tight.
+- Use `calendar_create_event`, `calendar_update_event`, and `calendar_delete_event` only when the shared write guard allows it.
+- For recurring event update/delete, always choose `span: "this"` for one occurrence or `span: "all"` for the whole series.
+- Use `calendar_show_event` when the user wants the event opened in Calendar.app.
+- Attendees are read-only in v1.
+
+## Access mode
+
+- `APPLE_PRODUCTIVITY_WRITE_MODE=confirm` means mutating tools ask by default and require `confirm: true`.
+- `APPLE_PRODUCTIVITY_WRITE_MODE=direct` means full local write access.
+- `APPLE_PRODUCTIVITY_WRITE_MODE=draft` is the safe default. Mail writes draft/preview where possible; Calendar writes return previews.
+
 ## Privacy
 
-Do not paste large private email bodies unless the user explicitly asks. Prefer concise summaries and cite message handles, subjects, senders, and dates.
+Do not paste large private email bodies or calendar notes unless the user explicitly asks.
+Prefer concise summaries and cite handles, subjects or summaries, senders or calendars, and dates.

@@ -162,7 +162,7 @@ export class MailService {
   }
 
   async send(args: MailComposeArgs & { confirm?: boolean; dryRun?: boolean }) {
-    const decision = decideWrite(this.config, "send", args.confirm, args.dryRun);
+    const decision = decideWrite(this.config, "mail.send", args.confirm, args.dryRun);
     if (!decision.allowed) {
       if (this.config.writeMode === "draft" && !args.dryRun) {
         const draft = await this.compose({ ...args, visible: true });
@@ -180,18 +180,18 @@ export class MailService {
   }
 
   archive(args: MailWriteArgs) {
-    return this.move({ ...args, targetRole: "archive" }, "archive");
+    return this.move({ ...args, targetRole: "archive" }, "mail.archive");
   }
 
   delete(args: MailWriteArgs) {
-    return this.move({ ...args, targetRole: "trash" }, "delete");
+    return this.move({ ...args, targetRole: "trash" }, "mail.delete");
   }
 
   moveToJunk(args: MailWriteArgs) {
-    return this.move({ ...args, targetRole: "junk" }, "move");
+    return this.move({ ...args, targetRole: "junk" }, "mail.move");
   }
 
-  async move(args: MailMoveArgs, action: "archive" | "delete" | "move" = "move") {
+  async move(args: MailMoveArgs, action: "mail.archive" | "mail.delete" | "mail.move" = "mail.move") {
     const decision = decideWrite(this.config, action, args.confirm, args.dryRun);
     const decoded = args.handles.map(decodeMessageHandle);
 
@@ -220,7 +220,7 @@ export class MailService {
   }
 
   async undoMove(args: MailUndoMoveArgs) {
-    const decision = decideWrite(this.config, "move", args.confirm, args.dryRun);
+    const decision = decideWrite(this.config, "mail.move", args.confirm, args.dryRun);
     const tokens = args.undoTokens.map(decodeUndoToken);
     const handles = tokens.map((token) => ({
       account: token.account,
@@ -246,7 +246,7 @@ export class MailService {
         handles: [handles[index]],
         targetMailbox: token.fromMailbox
       });
-      moved.push(...result.moved.map((item) => encodeMovedItem(item, "undo")));
+      moved.push(...result.moved.map((item) => encodeMovedItem(item, "mail.move")));
     }
 
     return { moved };
