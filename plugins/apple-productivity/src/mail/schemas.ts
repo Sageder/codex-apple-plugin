@@ -3,10 +3,14 @@ import { z } from "zod";
 const optionalDate = z.string().datetime().optional();
 
 export const mailSearchSchema = z.object({
-  query: z.string().optional().describe("Search terms for sender, subject, mailbox, or metadata."),
+  query: z.string().optional().describe("Search terms for subject, sender, recipients, mailbox, or account metadata."),
+  subject: z.string().optional().describe("Exact subject match. Prefer this when looking for a known message subject."),
   account: z.string().optional().describe("Optional Mail account name or email address."),
   mailbox: z.string().optional().describe("Exact mailbox name when scope is mailbox."),
-  scope: z.enum(["inbox", "all", "mailbox"]).optional().default("inbox"),
+  scope: z.enum(["inbox", "sent", "archive", "trash", "junk", "all", "mailbox"]).optional().default("inbox"),
+  sender: z.string().optional().describe("Match sender name or address."),
+  recipient: z.string().optional().describe("Match recipient name or address. Use this for questions like what did I send to someone."),
+  participant: z.string().optional().describe("Match either sender or recipient name/address."),
   unreadOnly: z.boolean().optional().default(false),
   since: optionalDate,
   before: optionalDate,
@@ -26,6 +30,7 @@ export const mailReadSchema = z.object({
 });
 
 export const mailComposeSchema = z.object({
+  from: z.string().email().optional().describe("Optional configured Apple Mail sender address."),
   to: z.array(z.string().email()).min(1),
   cc: z.array(z.string().email()).optional(),
   bcc: z.array(z.string().email()).optional(),
@@ -45,3 +50,17 @@ export const mailWriteSchema = z.object({
   dryRun: z.boolean().optional()
 });
 
+export const mailMoveSchema = mailWriteSchema
+  .extend({
+    targetRole: z.enum(["inbox", "archive", "trash", "junk"]).optional(),
+    targetMailbox: z.string().optional().describe("Exact target mailbox name on the same account.")
+  })
+  .refine((value) => Boolean(value.targetRole) !== Boolean(value.targetMailbox), {
+    message: "Provide exactly one of targetRole or targetMailbox."
+  });
+
+export const mailUndoMoveSchema = z.object({
+  undoTokens: z.array(z.string()).min(1).max(50),
+  confirm: z.boolean().optional(),
+  dryRun: z.boolean().optional()
+});

@@ -1,20 +1,26 @@
 import { AppleBridge } from "../appleBridge.js";
 import type { RuntimeConfig } from "../config.js";
 import { decideWrite } from "../writeGuard.js";
-import { encodeMessageHandle, decodeMessageHandle } from "./handle.js";
+import { decodeMessageHandle, decodeUndoToken, encodeMessageHandle, encodeUndoToken } from "./handle.js";
 import { rankContext, scoreSummary } from "./retrieval.js";
 import {
   composeMessageScript,
+  listMailboxesScript,
   listAccountsScript,
   moveMessagesScript,
   readMessagesScript,
+  searchRecipientMessagesScript,
   searchMessagesScript,
+  searchSubjectMessagesScript,
   sendMessageScript
 } from "./jxaScripts.js";
 import type {
   MailAccount,
+  MailboxInfo,
+  MailMoveRole,
   MailMessageBody,
   MailMessageSummary,
+  MoveResult,
   RawMessageBody,
   RawMessageSummary,
   SearchMessagesInput
@@ -22,9 +28,13 @@ import type {
 
 export interface MailSearchArgs {
   query?: string;
+  subject?: string;
   account?: string;
   mailbox?: string;
-  scope?: "inbox" | "all" | "mailbox";
+  scope?: "inbox" | "sent" | "archive" | "trash" | "junk" | "all" | "mailbox";
+  sender?: string;
+  recipient?: string;
+  participant?: string;
   unreadOnly?: boolean;
   since?: string;
   before?: string;
@@ -39,6 +49,7 @@ export interface MailReadArgs {
 }
 
 export interface MailComposeArgs {
+  from?: string;
   to: string[];
   cc?: string[];
   bcc?: string[];
@@ -49,6 +60,17 @@ export interface MailComposeArgs {
 
 export interface MailWriteArgs {
   handles: string[];
+  confirm?: boolean;
+  dryRun?: boolean;
+}
+
+export interface MailMoveArgs extends MailWriteArgs {
+  targetRole?: MailMoveRole;
+  targetMailbox?: string;
+}
+
+export interface MailUndoMoveArgs {
+  undoTokens: string[];
   confirm?: boolean;
   dryRun?: boolean;
 }
@@ -64,12 +86,20 @@ export class MailService {
     return { accounts };
   }
 
+  async listMailboxes(): Promise<{ mailboxes: MailboxInfo[] }> {
+    return this.bridge.runJxa<{ mailboxes: MailboxInfo[] }>(listMailboxesScript);
+  }
+
   async search(args: MailSearchArgs): Promise<{ messages: MailMessageSummary[] }> {
     const input: SearchMessagesInput = {
       query: args.query,
+      subject: args.subject,
       account: args.account,
       mailbox: args.mailbox,
       scope: args.scope,
+      sender: args.sender,
+      recipient: args.recipient,
+      participant: args.participant,
       unreadOnly: args.unreadOnly,
       since: args.since,
       before: args.before,
@@ -78,7 +108,12 @@ export class MailService {
       maxScanPerMailbox: args.maxScanPerMailbox ?? 200
     };
 
-    const raw = await this.bridge.runJxa<RawMessageSummary[]>(searchMessagesScript, input);
+    const script = shouldUseSubjectFastPath(input)
+      ? searchSubjectMessagesScript
+      : shouldUseRecipientFastPath(input)
+        ? searchRecipientMessagesScript
+        : searchMessagesScript;
+    const raw = await this.bridge.runJxa<RawMessageSummary[]>(script, input);
     return {
       messages: raw.map(encodeSummary).sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
     };
@@ -145,15 +180,18 @@ export class MailService {
   }
 
   archive(args: MailWriteArgs) {
-    return this.moveRole(args, "archive");
+    return this.move({ ...args, targetRole: "archive" }, "archive");
   }
 
   delete(args: MailWriteArgs) {
-    return this.moveRole(args, "trash");
+    return this.move({ ...args, targetRole: "trash" }, "delete");
   }
 
-  private async moveRole(args: MailWriteArgs, role: "archive" | "trash") {
-    const action = role === "archive" ? "archive" : "delete";
+  moveToJunk(args: MailWriteArgs) {
+    return this.move({ ...args, targetRole: "junk" }, "move");
+  }
+
+  async move(args: MailMoveArgs, action: "archive" | "delete" | "move" = "move") {
     const decision = decideWrite(this.config, action, args.confirm, args.dryRun);
     const decoded = args.handles.map(decodeMessageHandle);
 
@@ -161,15 +199,74 @@ export class MailService {
       return {
         mode: decision.mode,
         moved: false,
-        role,
+        targetRole: args.targetRole,
+        targetMailbox: args.targetMailbox,
         count: decoded.length,
         targets: decoded,
         reason: decision.reason
       };
     }
 
-    return this.bridge.runJxa(moveMessagesScript, { handles: decoded, role });
+    const result = await this.bridge.runJxa<{ moved: MoveResult[] }>(moveMessagesScript, {
+      handles: decoded,
+      role: args.targetRole,
+      targetRole: args.targetRole,
+      targetMailbox: args.targetMailbox
+    });
+    return {
+      ...result,
+      moved: result.moved.map((item) => encodeMovedItem(item, action))
+    };
   }
+
+  async undoMove(args: MailUndoMoveArgs) {
+    const decision = decideWrite(this.config, "move", args.confirm, args.dryRun);
+    const tokens = args.undoTokens.map(decodeUndoToken);
+    const handles = tokens.map((token) => ({
+      account: token.account,
+      mailbox: token.toMailbox,
+      id: token.id,
+      messageId: token.messageId
+    }));
+
+    if (!decision.allowed) {
+      return {
+        mode: decision.mode,
+        moved: false,
+        count: tokens.length,
+        targets: tokens,
+        reason: decision.reason
+      };
+    }
+
+    const moved: Array<ReturnType<typeof encodeMovedItem>> = [];
+    for (let index = 0; index < tokens.length; index += 1) {
+      const token = tokens[index];
+      const result = await this.bridge.runJxa<{ moved: MoveResult[] }>(moveMessagesScript, {
+        handles: [handles[index]],
+        targetMailbox: token.fromMailbox
+      });
+      moved.push(...result.moved.map((item) => encodeMovedItem(item, "undo")));
+    }
+
+    return { moved };
+  }
+}
+
+function shouldUseRecipientFastPath(input: SearchMessagesInput): boolean {
+  return Boolean(
+    input.recipient &&
+      !input.query &&
+      !input.sender &&
+      !input.participant &&
+      !input.unreadOnly &&
+      !input.since &&
+      !input.before
+  );
+}
+
+function shouldUseSubjectFastPath(input: SearchMessagesInput): boolean {
+  return Boolean(input.subject);
 }
 
 function encodeSummary(raw: RawMessageSummary): MailMessageSummary {
@@ -188,6 +285,7 @@ function encodeBody(raw: RawMessageBody): MailMessageBody {
 
 function previewMessage(args: MailComposeArgs) {
   return {
+    from: args.from,
     to: args.to,
     cc: args.cc ?? [],
     bcc: args.bcc ?? [],
@@ -196,3 +294,33 @@ function previewMessage(args: MailComposeArgs) {
   };
 }
 
+function encodeMovedItem(item: MoveResult, action: string) {
+  const handle = encodeMessageHandle({
+    account: item.account,
+    mailbox: item.toMailbox,
+    id: item.id,
+    messageId: item.messageId
+  });
+  const previousHandle = encodeMessageHandle({
+    account: item.account,
+    mailbox: item.fromMailbox,
+    id: item.id,
+    messageId: item.messageId
+  });
+  const undoToken = encodeUndoToken({
+    action,
+    account: item.account,
+    id: item.id,
+    messageId: item.messageId,
+    fromMailbox: item.fromMailbox,
+    toMailbox: item.toMailbox,
+    createdAt: new Date().toISOString()
+  });
+
+  return {
+    ...item,
+    handle,
+    previousHandle,
+    undoToken
+  };
+}

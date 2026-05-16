@@ -11,11 +11,28 @@ describe("retrieval ranking", () => {
       id: 1,
       subject: "Stripe interview schedule",
       sender: "recruiting@example.com",
+      recipients: [{ name: "Clemens", address: "clemens@example.com" }],
       read: false,
       flagged: false
     };
 
     expect(scoreSummary(message, "stripe schedule")).toBeGreaterThan(scoreSummary(message, "banana"));
+  });
+
+  it("scores recipient matches for sent-mail lookup", () => {
+    const message: MailMessageSummary = {
+      handle: "h",
+      account: "College",
+      mailbox: "Sent Items",
+      id: 2,
+      subject: "Remote ML work",
+      sender: "clemens@example.com",
+      recipients: [{ name: "Patrick Hsu", address: "pdhsu@example.com" }],
+      read: true,
+      flagged: false
+    };
+
+    expect(scoreSummary(message, "patrick hsu")).toBeGreaterThan(scoreSummary(message, "banana"));
   });
 
   it("returns useful body snippets", () => {
@@ -27,6 +44,7 @@ describe("retrieval ranking", () => {
         id: 1,
         subject: "Receipt",
         sender: "store@example.com",
+        recipients: [{ name: "Clemens", address: "clemens@example.com" }],
         read: true,
         flagged: false,
         content: "Your package shipment and invoice are ready.",
@@ -40,6 +58,7 @@ describe("retrieval ranking", () => {
         id: 2,
         subject: "Other",
         sender: "other@example.com",
+        recipients: [{ name: "Clemens", address: "clemens@example.com" }],
         read: true,
         flagged: false,
         content: "Unrelated note.",
@@ -53,4 +72,3 @@ describe("retrieval ranking", () => {
     expect(snippets[0]?.handle).toBe("a");
   });
 });
-

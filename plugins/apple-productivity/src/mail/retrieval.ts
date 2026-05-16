@@ -4,7 +4,9 @@ export interface RetrievalSnippet {
   handle: string;
   subject: string;
   sender: string;
+  recipients: string[];
   dateReceived?: string;
+  dateSent?: string;
   mailbox: string;
   score: number;
   reason: string;
@@ -52,12 +54,14 @@ export function scoreSummary(message: MailMessageSummary, query: string): number
 
   const subject = message.subject.toLowerCase();
   const sender = message.sender.toLowerCase();
+  const recipients = message.recipients.map((recipient) => `${recipient.name} ${recipient.address}`.toLowerCase()).join(" ");
   const mailbox = message.mailbox.toLowerCase();
 
   return terms.reduce((score, term) => {
     let next = score;
     if (subject.includes(term)) next += 5;
     if (sender.includes(term)) next += 3;
+    if (recipients.includes(term)) next += 4;
     if (mailbox.includes(term)) next += 1;
     return next;
   }, 0);
@@ -118,7 +122,9 @@ export function rankContext(messages: MailMessageBody[], query: string, topK: nu
         handle: message.handle,
         subject: message.subject,
         sender: message.sender,
+        recipients: message.recipients.map((recipient) => recipient.name || recipient.address).filter(Boolean),
         dateReceived: message.dateReceived,
+        dateSent: message.dateSent,
         mailbox: message.mailbox,
         score,
         reason: buildReason({ baseScore, bodyScore, matchedTerms: terms.filter((term) => lowerChunk.includes(term)) }),
@@ -151,4 +157,3 @@ function buildReason(input: { baseScore: number; bodyScore: number; matchedTerms
   if (input.bodyScore > 0) reasons.push(`body matched ${input.matchedTerms.slice(0, 6).join(", ")}`);
   return reasons.length ? reasons.join("; ") : "recent candidate";
 }
-

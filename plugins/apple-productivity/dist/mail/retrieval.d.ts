@@ -3,7 +3,9 @@ export interface RetrievalSnippet {
     handle: string;
     subject: string;
     sender: string;
+    recipients: string[];
     dateReceived?: string;
+    dateSent?: string;
     mailbox: string;
     score: number;
     reason: string;

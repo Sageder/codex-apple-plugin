@@ -9,6 +9,37 @@ function run(argv) {
   return JSON.stringify(accounts);
 }
 `;
+export const listMailboxesScript = `
+function lower(value) {
+  return String(value || "").toLowerCase();
+}
+
+function mailboxRole(name) {
+  const value = lower(name);
+  if (value === "inbox") return "inbox";
+  if (value.includes("sent")) return "sent";
+  if (value === "archive" || /^archive\\d+$/.test(value) || value.includes("archive") || value.includes("all mail")) return "archive";
+  if (value.includes("deleted") || value === "trash" || value === "bin") return "trash";
+  if (value.includes("junk") || value.includes("spam")) return "junk";
+  return "other";
+}
+
+function run(argv) {
+  const Mail = Application("Mail");
+  const mailboxes = [];
+  for (const account of Mail.accounts()) {
+    for (const mailbox of account.mailboxes()) {
+      const name = String(mailbox.name());
+      mailboxes.push({
+        account: String(account.name()),
+        name,
+        role: mailboxRole(name)
+      });
+    }
+  }
+  return JSON.stringify({ mailboxes });
+}
+`;
 const common = `
 function inputFrom(argv) {
   return JSON.parse(argv[0] || "{}");
@@ -16,6 +47,19 @@ function inputFrom(argv) {
 
 function lower(value) {
   return String(value || "").toLowerCase();
+}
+
+function queryTerms(value) {
+  return lower(value).split(/[^a-z0-9_@.+-]+/).filter(term => term.length > 1);
+}
+
+function textMatchesQuery(text, query) {
+  const haystack = lower(text);
+  const needle = lower(query);
+  if (!needle) return true;
+  if (haystack.includes(needle)) return true;
+  const terms = queryTerms(query);
+  return terms.length > 0 && terms.some(term => haystack.includes(term));
 }
 
 function toIso(value) {
@@ -49,7 +93,8 @@ function mailboxHandle(account, mailbox, message) {
   return {
     account: String(account.name()),
     mailbox: String(mailbox.name()),
-    id: Number(message.id())
+    id: Number(message.id()),
+    messageId: safeString(() => message.messageId())
   };
 }
 
@@ -69,6 +114,20 @@ function isTrashName(name) {
   return value.includes("deleted") || value === "trash" || value === "bin" || value.includes("junk");
 }
 
+function isSentName(name) {
+  return lower(name).includes("sent");
+}
+
+function isArchiveName(name) {
+  const value = lower(name);
+  return value === "archive" || /^archive\\d+$/.test(value) || value.includes("archive") || value.includes("all mail");
+}
+
+function isJunkName(name) {
+  const value = lower(name);
+  return value.includes("junk") || value.includes("spam");
+}
+
 function selectedMailboxes(account, input) {
   const all = account.mailboxes();
   const scope = input.scope || (input.mailbox ? "mailbox" : "inbox");
@@ -82,51 +141,108 @@ function selectedMailboxes(account, input) {
     return all.filter(mailbox => input.includeTrash || !isTrashName(mailbox.name()));
   }
 
+  if (scope === "sent") {
+    return all.filter(mailbox => isSentName(mailbox.name()));
+  }
+
+  if (scope === "archive") {
+    return all.filter(mailbox => isArchiveName(mailbox.name()));
+  }
+
+  if (scope === "trash") {
+    return all.filter(mailbox => isTrashName(mailbox.name()));
+  }
+
+  if (scope === "junk") {
+    return all.filter(mailbox => isJunkName(mailbox.name()));
+  }
+
   return all.filter(mailbox => lower(mailbox.name()) === "inbox");
 }
 
-function messageMetadata(account, mailbox, message, query) {
-  const subject = safeString(() => message.subject());
-  const sender = safeString(() => message.sender());
-  const dateReceived = toIso(message.dateReceived());
-  const dateSent = toIso(message.dateSent());
-  const read = Boolean(message.readStatus());
-  const flagged = Boolean(message.flaggedStatus());
-  const size = safeNumber(() => message.messageSize());
-  const searchable = lower([subject, sender, mailbox.name(), account.name()].join(" "));
-  const terms = lower(query).split(/[^a-z0-9_@.+-]+/).filter(Boolean);
+function recipientMetadata(message) {
+  try {
+    const out = [];
+    const recipients = message.recipients();
+    for (let index = 0; index < recipients.length; index += 1) {
+      const recipient = recipients[index];
+      out.push({
+        name: String(recipient.name() || ""),
+        address: String(recipient.address() || "")
+      });
+    }
+    return out;
+  } catch (_) {
+    return [];
+  }
+}
+
+function messageSearchMetadata(account, mailbox, message, query, input) {
+  const needsTextSearch = Boolean(query || input.sender || input.participant);
+  const needsRecipients = Boolean(query || input.recipient || input.participant);
+  const subject = needsTextSearch ? safeString(() => message.subject()) : "";
+  const sender = needsTextSearch ? safeString(() => message.sender()) : "";
+  const recipients = needsRecipients ? recipientMetadata(message) : [];
+  const recipientText = recipients.map(recipient => [recipient.name, recipient.address].join(" ")).join(" ");
+  const searchable = lower([subject, sender, recipientText, mailbox.name(), account.name()].join(" "));
+  const terms = queryTerms(query);
   const score = terms.reduce((total, term) => {
     if (lower(subject).includes(term)) total += 5;
     if (lower(sender).includes(term)) total += 3;
+    if (lower(recipientText).includes(term)) total += 4;
     if (searchable.includes(term)) total += 1;
     return total;
   }, 0);
 
-  return {
+  const metadata = {
     handle: mailboxHandle(account, mailbox, message),
     account: String(account.name()),
     mailbox: String(mailbox.name()),
     id: Number(message.id()),
+    messageId: safeString(() => message.messageId()),
     subject,
     sender,
-    dateReceived,
-    dateSent,
-    read,
-    flagged,
-    size,
+    recipients,
     score
   };
+
+  if (input.unreadOnly) metadata.read = Boolean(message.readStatus());
+  if (input.since || input.before) metadata.dateReceived = toIso(message.dateReceived());
+
+  return metadata;
+}
+
+function messageMetadata(account, mailbox, message, query, base) {
+  const metadata = base || messageSearchMetadata(account, mailbox, message, query || "", {});
+  if (!metadata.subject) metadata.subject = safeString(() => message.subject());
+  if (!metadata.sender) metadata.sender = safeString(() => message.sender());
+  if (!metadata.recipients || metadata.recipients.length === 0) metadata.recipients = recipientMetadata(message);
+  if (metadata.dateReceived === undefined) metadata.dateReceived = toIso(message.dateReceived());
+  if (metadata.dateSent === undefined) metadata.dateSent = toIso(message.dateSent());
+  if (metadata.read === undefined) metadata.read = Boolean(message.readStatus());
+  if (metadata.flagged === undefined) metadata.flagged = Boolean(message.flaggedStatus());
+  if (metadata.size === undefined) metadata.size = safeNumber(() => message.messageSize());
+  return metadata;
 }
 
 function passesFilters(metadata, input) {
   if (input.unreadOnly && metadata.read) return false;
   if (input.since && metadata.dateReceived && new Date(metadata.dateReceived) < new Date(input.since)) return false;
   if (input.before && metadata.dateReceived && new Date(metadata.dateReceived) > new Date(input.before)) return false;
+  if (input.subject && metadata.subject !== input.subject) return false;
+
+  const recipientText = lower(metadata.recipients.map(recipient => [recipient.name, recipient.address].join(" ")).join(" "));
+  const senderText = lower(metadata.sender);
+  if (input.sender && !textMatchesQuery(senderText, input.sender)) return false;
+  if (input.recipient && !textMatchesQuery(recipientText, input.recipient)) return false;
+  if (input.participant) {
+    if (!textMatchesQuery(senderText, input.participant) && !textMatchesQuery(recipientText, input.participant)) return false;
+  }
 
   if (input.query) {
-    const terms = lower(input.query).split(/[^a-z0-9_@.+-]+/).filter(Boolean);
-    const haystack = lower([metadata.subject, metadata.sender, metadata.mailbox, metadata.account].join(" "));
-    if (terms.length && !terms.some(term => haystack.includes(term))) return false;
+    const terms = queryTerms(input.query);
+    const haystack = lower([metadata.subject, metadata.sender, recipientText, metadata.mailbox, metadata.account].join(" "));
+    if (terms.length && !terms.every(term => haystack.includes(term))) return false;
   }
 
   return true;
@@ -149,12 +265,21 @@ function findMessage(Mail, handle) {
   const account = findAccount(Mail, handle);
   const mailbox = findMailbox(account, handle.mailbox);
   const matches = mailbox.messages.whose({ id: Number(handle.id) });
-  if (!matches.length || !matches[0].exists()) throw new Error("Message not found: " + handle.id);
-  return { account, mailbox, message: matches[0] };
+  if (matches.length && matches[0].exists()) return { account, mailbox, message: matches[0] };
+  if (handle.messageId) {
+    const byMessageId = mailbox.messages.whose({ messageId: String(handle.messageId) });
+    if (byMessageId.length && byMessageId[0].exists()) return { account, mailbox, message: byMessageId[0] };
+  }
+  throw new Error("Message not found: " + handle.id);
 }
 
 function roleRank(name, role) {
   const value = lower(name);
+  if (role === "inbox") {
+    if (value === "inbox") return 0;
+    return 999;
+  }
+
   if (role === "archive") {
     if (value === "archive") return 0;
     if (/^archive\\d+$/.test(value)) return 1;
@@ -163,12 +288,22 @@ function roleRank(name, role) {
     return 999;
   }
 
-  if (value === "deleted messages") return 0;
-  if (value === "deleted items") return 1;
-  if (value === "trash") return 2;
-  if (value === "bin") return 3;
-  if (value.includes("deleted")) return 4;
-  if (value.includes("trash")) return 5;
+  if (role === "trash") {
+    if (value === "deleted messages") return 0;
+    if (value === "deleted items") return 1;
+    if (value === "trash") return 2;
+    if (value === "bin") return 3;
+    if (value.includes("deleted")) return 4;
+    if (value.includes("trash")) return 5;
+    return 999;
+  }
+
+  if (role === "junk") {
+    if (value === "junk") return 0;
+    if (value === "junk email") return 1;
+    if (value.includes("junk")) return 2;
+    if (value.includes("spam")) return 3;
+  }
   return 999;
 }
 
@@ -179,6 +314,13 @@ function resolveRoleMailbox(account, role) {
     .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name));
   if (!ranked.length) throw new Error("No " + role + " mailbox found for account " + account.name());
   return ranked[0].mailbox;
+}
+
+function resolveTargetMailbox(account, input) {
+  if (input.targetMailbox) {
+    return findMailbox(account, input.targetMailbox);
+  }
+  return resolveRoleMailbox(account, input.role || input.targetRole);
 }
 
 function attachmentMetadata(message) {
@@ -205,9 +347,9 @@ function run(argv) {
       const scanCount = Math.min(messages.length, maxScanPerMailbox);
       for (let index = 0; index < scanCount; index += 1) {
         const message = messages[index];
-        const metadata = messageMetadata(account, mailbox, message, input.query || "");
+        const metadata = messageSearchMetadata(account, mailbox, message, input.query || "", input);
         if (!passesFilters(metadata, input)) continue;
-        results.push(metadata);
+        results.push(messageMetadata(account, mailbox, message, input.query || "", metadata));
         if (results.length >= limit) {
           return JSON.stringify(results.sort((a, b) => (b.score || 0) - (a.score || 0)));
         }
@@ -216,6 +358,72 @@ function run(argv) {
   }
 
   return JSON.stringify(results.sort((a, b) => (b.score || 0) - (a.score || 0)));
+}
+`;
+export const searchRecipientMessagesScript = `
+${common}
+
+function run(argv) {
+  const input = inputFrom(argv);
+  const Mail = Application("Mail");
+  const limit = Number(input.limit || 20);
+  const maxScanPerMailbox = Number(input.maxScanPerMailbox || 200);
+  const results = [];
+
+  for (const account of selectedAccounts(Mail, input.account)) {
+    for (const mailbox of selectedMailboxes(account, input)) {
+      const messages = mailbox.messages();
+      const scanCount = Math.min(messages.length, maxScanPerMailbox);
+      for (let index = 0; index < scanCount; index += 1) {
+        const message = messages[index];
+        const recipients = recipientMetadata(message);
+        const recipientText = recipients.map(recipient => [recipient.name, recipient.address].join(" ")).join(" ");
+        if (!textMatchesQuery(recipientText, input.recipient)) continue;
+        const metadata = messageMetadata(account, mailbox, message, input.query || "", {
+          handle: mailboxHandle(account, mailbox, message),
+          account: String(account.name()),
+          mailbox: String(mailbox.name()),
+      id: Number(message.id()),
+      messageId: safeString(() => message.messageId()),
+      recipients,
+          score: 10
+        });
+        results.push(metadata);
+        if (results.length >= limit) {
+          return JSON.stringify(results);
+        }
+      }
+    }
+  }
+
+  return JSON.stringify(results);
+}
+`;
+export const searchSubjectMessagesScript = `
+${common}
+
+function run(argv) {
+  const input = inputFrom(argv);
+  const Mail = Application("Mail");
+  const limit = Number(input.limit || 20);
+  const results = [];
+
+  for (const account of selectedAccounts(Mail, input.account)) {
+    for (const mailbox of selectedMailboxes(account, input)) {
+      const messages = mailbox.messages.whose({ subject: String(input.subject || "") });
+      for (let index = 0; index < messages.length; index += 1) {
+        if (!messages[index].exists()) continue;
+        const metadata = messageMetadata(account, mailbox, messages[index], input.query || "");
+        if (!passesFilters(metadata, input)) continue;
+        results.push(metadata);
+        if (results.length >= limit) {
+          return JSON.stringify(results);
+        }
+      }
+    }
+  }
+
+  return JSON.stringify(results);
 }
 `;
 export const readMessagesScript = `
@@ -252,11 +460,13 @@ function run(argv) {
 
   for (const handle of input.handles) {
     const found = findMessage(Mail, handle);
-    const target = resolveRoleMailbox(found.account, targetRole);
+    const target = resolveTargetMailbox(found.account, input);
     const before = String(found.mailbox.name());
+    const stableMessageId = safeString(() => found.message.messageId());
     found.message.mailbox = target;
     moved.push({
       id: Number(handle.id),
+      messageId: stableMessageId,
       account: String(found.account.name()),
       fromMailbox: before,
       toMailbox: String(target.name())
@@ -277,6 +487,9 @@ function run(argv) {
     content: String(input.body || ""),
     visible: input.visible !== false
   });
+  if (input.from) {
+    message.sender = String(input.from);
+  }
   Mail.outgoingMessages.push(message);
 
   for (const recipient of input.to || []) {
@@ -309,6 +522,9 @@ function run(argv) {
     content: String(input.body || ""),
     visible: false
   });
+  if (input.from) {
+    message.sender = String(input.from);
+  }
   Mail.outgoingMessages.push(message);
 
   for (const recipient of input.to || []) {

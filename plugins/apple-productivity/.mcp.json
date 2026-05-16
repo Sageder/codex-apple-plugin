@@ -4,7 +4,8 @@
       "command": "node",
       "args": ["./dist/index.js"],
       "env": {
-        "APPLE_PRODUCTIVITY_WRITE_MODE": "draft"
+        "APPLE_PRODUCTIVITY_WRITE_MODE": "draft",
+        "APPLE_PRODUCTIVITY_OSASCRIPT_TIMEOUT_MS": "60000"
       }
     }
   }
