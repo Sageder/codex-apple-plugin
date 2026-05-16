@@ -1,7 +1,7 @@
 {
-  "name": "sageder-local",
+  "name": "codex-apple-plugin",
   "interface": {
-    "displayName": "Sage Local Plugins"
+    "displayName": "Apple Productivity"
   },
   "plugins": [
     {
