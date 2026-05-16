@@ -109,6 +109,33 @@ func stringValue(_ value: Any?) -> String {
   return String(describing: value)
 }
 
+func richTextValue(_ value: Any?, depth: Int = 0) -> String {
+  guard let value, depth < 4 else { return "" }
+  if let value = value as? String { return value }
+  if let value = value as? NSAttributedString { return value.string }
+  if let value = value as? NSArray {
+    return value.map { richTextValue($0, depth: depth + 1) }.joined()
+  }
+  if let value = value as? SBObject {
+    let resolved = value.get()
+    let text = richTextValue(resolved, depth: depth + 1)
+    if !text.isEmpty {
+      return text
+    }
+
+    let description = String(describing: value)
+    return isScriptingBridgeObjectDescription(description) ? "" : description
+  }
+
+  let description = String(describing: value)
+  return isScriptingBridgeObjectDescription(description) ? "" : description
+}
+
+func isScriptingBridgeObjectDescription(_ value: String) -> Bool {
+  let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+  return trimmed.hasPrefix("<Mail") || trimmed.contains("MailRichText") || trimmed.contains("SBObject")
+}
+
 func intValue(_ value: Any?) -> Int {
   if let value = value as? Int { return value }
   if let value = value as? NSNumber { return value.intValue }
@@ -241,7 +268,7 @@ final class MailClient {
     return try handles.map { handle in
       let found = try findMessage(handle)
       var metadata = fullMetadata(account: found.account, mailbox: found.mailbox, message: found.message)
-      let content = stringValue(kvc(found.message, "content"))
+      let content = richTextValue(kvc(found.message, "content"))
       metadata["content"] = String(content.prefix(maxBodyChars))
       metadata["truncated"] = content.count > maxBodyChars
       metadata["attachments"] = attachmentMetadata(found.message)
