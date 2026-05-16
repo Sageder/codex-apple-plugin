@@ -1,7 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="Apple Productivity">
-  <rect width="128" height="128" rx="28" fill="#0A84FF"/>
-  <path d="M24 42c0-6.6 5.4-12 12-12h56c6.6 0 12 5.4 12 12v44c0 6.6-5.4 12-12 12H36c-6.6 0-12-5.4-12-12V42z" fill="#fff"/>
-  <path d="M34 43l27.7 24.2a3.5 3.5 0 0 0 4.6 0L94 43" fill="none" stroke="#0A84FF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M39 91l18.5-19M89 91L70.5 72" fill="none" stroke="#0A84FF" stroke-width="6" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="bg" x1="20" y1="12" x2="108" y2="116" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0A84FF"/>
+      <stop offset="1" stop-color="#0157D7"/>
+    </linearGradient>
+    <filter id="shadow" x="12" y="16" width="104" height="104" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#003C92" flood-opacity=".28"/>
+    </filter>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
+  <g filter="url(#shadow)">
+    <path d="M72.4 23.8c-4.5 2.8-7.7 7.8-7.2 12.7 5.2.5 10.9-2.8 13.7-7.7 1.8-3.1 2.4-6.5 2.3-8.5-3.1-.1-6 .9-8.8 3.5z" fill="#fff"/>
+    <path d="M64 41c-5.1-5.7-15.4-8-24.2-2.7C29.2 44.8 25 58 27.5 72.8 30.9 93 43.9 107 54.4 107c4.1 0 6.2-2.1 9.6-2.1s5.7 2.1 9.7 2.1c10.8 0 23.5-14 26.8-34.2C103 58 98.8 44.8 88.2 38.3 79.4 33 69.1 35.3 64 41z" fill="#fff"/>
+  </g>
+  <g fill="none" stroke="#0A84FF" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M43 61h24l18-14" stroke-width="5"/>
+    <path d="M43 47l21 16" stroke-width="5"/>
+    <path d="M50 78h28" stroke-width="5"/>
+    <path d="M50 91h18" stroke-width="5"/>
+  </g>
+  <circle cx="86" cy="86" r="13" fill="#34C759" stroke="#fff" stroke-width="4"/>
+  <path d="M80.5 86.2l4 4.1 7.5-8.2" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5"/>
 </svg>
-
