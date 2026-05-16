@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { RuntimeConfig } from "../config.js";
-import { encodeReminderHandle } from "../reminders/handle.js";
 import type { RemindersBackend } from "../reminders/nativeBridge.js";
 import { RemindersService } from "../reminders/remindersService.js";
-import type { RawReminderBody, RawReminderSummary } from "../reminders/types.js";
+import type { ReminderBody, ReminderSummary } from "../reminders/types.js";
 
-class MockBridge {
+class MockBackend {
   calls: Array<{ action: string; input: unknown }> = [];
 
   constructor(private readonly responses: unknown[] = []) {}
@@ -25,134 +24,122 @@ const baseConfig: RuntimeConfig = {
   defaultRemindersList: "Tasks"
 };
 
-const rawHandle = { listId: "list-1", listName: "Tasks", id: "reminder-1" };
-const encodedHandle = encodeReminderHandle(rawHandle);
+const handle = "swift-owned-handle";
 
-function service(bridge: MockBridge, config: Partial<RuntimeConfig> = {}) {
-  return new RemindersService(bridge as unknown as RemindersBackend, { ...baseConfig, ...config });
+function service(backend: MockBackend, config: Partial<RuntimeConfig> = {}) {
+  return new RemindersService(backend as unknown as RemindersBackend, { ...baseConfig, ...config });
 }
 
-function rawSummary(): RawReminderSummary {
+function summary(): ReminderSummary {
   return {
-    handle: rawHandle,
-    id: rawHandle.id,
-    listId: rawHandle.listId,
-    listName: rawHandle.listName,
+    handle,
+    id: "reminder-1",
+    listId: "list-1",
+    listName: "Tasks",
     name: "Synthetic task",
     completed: false,
     priority: "none"
   };
 }
 
-function rawBody(): RawReminderBody {
+function body(): ReminderBody {
   return {
-    ...rawSummary(),
+    ...summary(),
     body: "Synthetic notes",
     truncated: false
   };
 }
 
 describe("reminders service", () => {
-  it("previews creates in draft mode and does not call the native helper", async () => {
-    const bridge = new MockBridge();
-    const result = await service(bridge).create({ name: "Synthetic task", body: "notes" });
+  it("forwards searches and wraps Swift results for MCP responses", async () => {
+    const backend = new MockBackend([[summary()]]);
+    const result = await service(backend).search({ query: "synthetic" });
 
-    expect(bridge.calls).toHaveLength(0);
-    expect(result).toMatchObject({
+    expect(backend.calls[0]).toEqual({ action: "search", input: { query: "synthetic" } });
+    expect(result).toEqual({ reminders: [summary()] });
+  });
+
+  it("adds max body chars for reads", async () => {
+    const backend = new MockBackend([[body()]]);
+    const result = await service(backend).read({ handles: [handle] });
+
+    expect(backend.calls[0]).toEqual({
+      action: "read",
+      input: { handles: [handle], maxBodyChars: 12000 }
+    });
+    expect(result).toEqual({ reminders: [body()] });
+  });
+
+  it("forwards creates to Swift with write config", async () => {
+    const response = {
       mode: "draft",
       created: false,
-      preview: { name: "Synthetic task", bodyChars: 5, list: "Tasks" }
+      preview: { name: "Synthetic task", bodyChars: 5, list: "Tasks" },
+      reason: "draft mode prevents irreversible writes"
+    };
+    const backend = new MockBackend([response]);
+    const result = await service(backend).create({ name: "Synthetic task", body: "notes" });
+
+    expect(backend.calls[0]).toEqual({
+      action: "create",
+      input: {
+        name: "Synthetic task",
+        body: "notes",
+        writeMode: "draft",
+        defaultList: "Tasks",
+        maxBodyChars: 12000
+      }
     });
+    expect(result).toEqual(response);
   });
 
-  it("normalizes create arguments and encodes returned handles in direct mode", async () => {
-    const bridge = new MockBridge([{ created: true, list: { listId: "list-1", listName: "Tasks" }, reminder: rawBody() }]);
-    const result = await service(bridge, { writeMode: "direct" }).create({
-      name: "Synthetic task",
-      url: "https://example.com/task",
-      alarmDates: ["2026-05-17T08:45:00+02:00"],
-      recurrence: { frequency: "daily", interval: 1 }
-    });
-
-    expect(bridge.calls[0]?.action).toBe("create");
-    expect(bridge.calls[0]?.input).toMatchObject({
-      name: "Synthetic task",
-      priority: "none",
-      url: "https://example.com/task",
-      alarmDates: ["2026-05-17T08:45:00+02:00"],
-      recurrence: { frequency: "daily", interval: 1 },
-      completed: false,
-      defaultList: "Tasks",
-      maxBodyChars: 12000
-    });
-    expect(result.reminder.handle).toBe(encodedHandle);
-  });
-
-  it("requires confirmation for completions in confirm mode", async () => {
-    const bridge = new MockBridge();
-    const result = await service(bridge, { writeMode: "confirm" }).complete({ handles: [encodedHandle] });
-
-    expect(bridge.calls).toHaveLength(0);
-    expect(result).toMatchObject({
-      mode: "confirm",
-      completed: false,
-      requestedCompleted: true,
-      targets: [rawHandle]
-    });
-  });
-
-  it("executes confirmed completions and encodes returned handles", async () => {
-    const bridge = new MockBridge([{ completed: true, reminders: [rawSummary()] }]);
-    const result = await service(bridge, { writeMode: "confirm" }).complete({
-      handles: [encodedHandle],
-      confirm: true
-    });
-
-    expect(bridge.calls[0]?.action).toBe("complete");
-    expect(bridge.calls[0]?.input).toMatchObject({ handles: [rawHandle], completed: true });
-    expect(result.reminders[0]?.handle).toBe(encodedHandle);
-  });
-
-  it("decodes update targets and encodes updated reminders", async () => {
-    const bridge = new MockBridge([{ updated: true, moved: false, reminder: rawBody() }]);
-    const result = await service(bridge, { writeMode: "direct" }).update({
-      handle: encodedHandle,
+  it("forwards direct updates without decoding handles in TypeScript", async () => {
+    const response = { updated: true, moved: false, reminder: body() };
+    const backend = new MockBackend([response]);
+    const result = await service(backend, { writeMode: "direct" }).update({
+      handle,
       body: null,
       dueDate: null
     });
 
-    expect(bridge.calls[0]?.action).toBe("update");
-    expect(bridge.calls[0]?.input).toMatchObject({ handle: rawHandle, body: null, dueDate: null });
-    expect(result.reminder.handle).toBe(encodedHandle);
+    expect(backend.calls[0]).toEqual({
+      action: "update",
+      input: {
+        handle,
+        body: null,
+        dueDate: null,
+        writeMode: "direct",
+        defaultList: "Tasks",
+        maxBodyChars: 12000
+      }
+    });
+    expect(result).toEqual(response);
   });
 
-  it("honors dry runs even in direct mode", async () => {
-    const bridge = new MockBridge();
-    const result = await service(bridge, { writeMode: "direct" }).delete({
-      handles: [encodedHandle],
-      dryRun: true
-    });
+  it("forwards batch writes to Swift for guard decisions", async () => {
+    const backend = new MockBackend([
+      { completed: false, requestedCompleted: true, count: 1 },
+      { deleted: false, count: 1 },
+      { moved: false, list: "Later", count: 1 }
+    ]);
 
-    expect(bridge.calls).toHaveLength(0);
-    expect(result).toMatchObject({
-      mode: "direct",
-      deleted: false,
-      count: 1,
-      targets: [rawHandle]
-    });
-  });
+    await service(backend).complete({ handles: [handle] });
+    await service(backend).delete({ handles: [handle], dryRun: true });
+    await service(backend).move({ handles: [handle], list: "Later" });
 
-  it("previews moves in draft mode", async () => {
-    const bridge = new MockBridge();
-    const result = await service(bridge).move({ handles: [encodedHandle], list: "Later" });
-
-    expect(bridge.calls).toHaveLength(0);
-    expect(result).toMatchObject({
-      mode: "draft",
-      moved: false,
-      list: "Later",
-      count: 1,
-      targets: [rawHandle]
-    });
+    expect(backend.calls).toEqual([
+      {
+        action: "complete",
+        input: { handles: [handle], writeMode: "draft", defaultList: "Tasks", maxBodyChars: 12000 }
+      },
+      {
+        action: "delete",
+        input: { handles: [handle], dryRun: true, writeMode: "draft", defaultList: "Tasks", maxBodyChars: 12000 }
+      },
+      {
+        action: "move",
+        input: { handles: [handle], list: "Later", writeMode: "draft", defaultList: "Tasks", maxBodyChars: 12000 }
+      }
+    ]);
   });
 });

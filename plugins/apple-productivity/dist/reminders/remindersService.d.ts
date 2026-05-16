@@ -1,6 +1,6 @@
 import type { RuntimeConfig } from "../config.js";
 import type { RemindersBackend } from "./nativeBridge.js";
-import type { RawReminderSummary, ReminderBody, ReminderHandlePayload, ReminderList, ReminderPriority, ReminderRecurrence, ReminderSummary } from "./types.js";
+import type { ReminderBody, ReminderList, ReminderPriority, ReminderRecurrence, ReminderSummary } from "./types.js";
 export interface RemindersListListsArgs {
     maxCountPerList?: number;
 }
@@ -76,101 +76,10 @@ export declare class RemindersService {
     read(args: RemindersReadArgs): Promise<{
         reminders: ReminderBody[];
     }>;
-    create(args: RemindersCreateArgs): Promise<{
-        reminder: ReminderBody;
-        created: boolean;
-        list: {
-            listId: string;
-            listName: string;
-        };
-    } | {
-        mode: import("../config.js").WriteMode;
-        created: boolean;
-        preview: {
-            name: string;
-            bodyChars: number;
-            list: string | null;
-            dueDate: string | undefined;
-            remindMeDate: string | undefined;
-            alarmDates: string[] | undefined;
-            priority: ReminderPriority;
-            url: string | undefined;
-            recurrence: ReminderRecurrence | undefined;
-            completed: boolean;
-        };
-        reason: string;
-    }>;
-    update(args: RemindersUpdateArgs): Promise<{
-        reminder: ReminderBody;
-        updated: boolean;
-        moved: boolean;
-        fromList?: {
-            listId: string;
-            listName: string;
-        };
-        toList?: {
-            listId: string;
-            listName: string;
-        };
-    } | {
-        mode: import("../config.js").WriteMode;
-        updated: boolean;
-        target: ReminderHandlePayload;
-        preview: {
-            name: string | undefined;
-            body: {
-                bodyChars: number;
-            } | null | undefined;
-            list: string | undefined;
-            dueDate: string | null | undefined;
-            remindMeDate: string | null | undefined;
-            alarmDates: string[] | null | undefined;
-            priority: ReminderPriority | null | undefined;
-            url: string | null | undefined;
-            recurrence: ReminderRecurrence | null | undefined;
-            completed: boolean | undefined;
-        };
-        reason: string;
-    }>;
-    complete(args: RemindersCompleteArgs): Promise<{
-        mode: import("../config.js").WriteMode;
-        completed: boolean;
-        requestedCompleted: boolean;
-        count: number;
-        targets: ReminderHandlePayload[];
-        reason: string;
-        reminders?: undefined;
-    } | {
-        completed: boolean;
-        reminders: ReminderSummary[];
-        mode?: undefined;
-        requestedCompleted?: undefined;
-        count?: undefined;
-        targets?: undefined;
-        reason?: undefined;
-    }>;
+    create(args: RemindersCreateArgs): Promise<unknown>;
+    update(args: RemindersUpdateArgs): Promise<unknown>;
+    complete(args: RemindersCompleteArgs): Promise<unknown>;
     delete(args: RemindersWriteArgs): Promise<unknown>;
-    move(args: RemindersMoveArgs): Promise<{
-        moved: {
-            reminder: ReminderSummary;
-            moved: boolean;
-            fromList: {
-                listId: string;
-                listName: string;
-            };
-            toList: {
-                listId: string;
-                listName: string;
-            };
-        }[];
-    } | {
-        mode: import("../config.js").WriteMode;
-        moved: boolean;
-        list: string;
-        count: number;
-        targets: ReminderHandlePayload[];
-        reason: string;
-    }>;
+    move(args: RemindersMoveArgs): Promise<unknown>;
+    private withWriteConfig;
 }
-export declare function encodeReminderSummaryForTest(raw: RawReminderSummary): ReminderSummary;
-export declare function decodeReminderHandleForTest(handle: string): ReminderHandlePayload;

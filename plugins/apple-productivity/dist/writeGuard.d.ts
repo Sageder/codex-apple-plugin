@@ -1,5 +1,5 @@
 import type { RuntimeConfig } from "./config.js";
-export type WriteAction = "send" | "archive" | "delete" | "move" | "create" | "update" | "complete";
+export type WriteAction = "send" | "archive" | "delete" | "move";
 export interface WriteDecision {
     allowed: boolean;
     mode: RuntimeConfig["writeMode"];
