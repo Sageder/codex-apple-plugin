@@ -1,7 +1,7 @@
 {
   "name": "apple-productivity",
   "version": "0.1.0",
-  "description": "Access Apple Mail through local macOS apps, with Calendar and Reminders modules planned next.",
+  "description": "Access Apple Mail, Calendar, and Reminders through local macOS apps.",
   "author": {
     "name": "Clemens Sageder",
     "email": "local@example.invalid",
@@ -21,8 +21,8 @@
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Apple Productivity",
-    "shortDescription": "Use Apple Mail from Codex",
-    "longDescription": "Use local macOS Apple apps from Codex, starting with Apple Mail account discovery, live search, RAG-style context retrieval, reading, composing, sending, archiving, and moving messages to trash with guarded write behavior.",
+    "shortDescription": "Use Apple Mail, Calendar, and Reminders from Codex",
+    "longDescription": "Use local macOS Apple apps from Codex, including Apple Mail account discovery, live search, RAG-style context retrieval, reading, composing, sending, archiving, and moving messages to trash; Swift/EventKit-backed Apple Calendar list, search, read, create, update, delete, and show workflows; and Swift/EventKit-backed Apple Reminders list discovery, search, reading, creating, updating, completing, deleting, and moving reminders with guarded write behavior.",
     "developerName": "Clemens Sageder",
     "category": "Productivity",
     "capabilities": [
@@ -35,7 +35,10 @@
     "defaultPrompt": [
       "Find useful context from my Apple Mail",
       "Draft a reply in Apple Mail",
-      "Archive irrelevant messages"
+      "Archive irrelevant messages",
+      "Create a calendar event",
+      "Create a reminder for this task",
+      "Show my overdue reminders"
     ],
     "brandColor": "#0A84FF",
     "composerIcon": "./assets/apple-productivity.svg",

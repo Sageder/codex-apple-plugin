@@ -8,6 +8,9 @@ import { registerCalendarTools } from "./calendar/tools.js";
 import { getRuntimeConfig } from "./config.js";
 import { MailService } from "./mail/mailService.js";
 import { registerMailTools } from "./mail/tools.js";
+import { RemindersNativeBridge } from "./reminders/nativeBridge.js";
+import { RemindersService } from "./reminders/remindersService.js";
+import { registerRemindersTools } from "./reminders/tools.js";
 const config = getRuntimeConfig();
 const bridge = new AppleBridge({ timeoutMs: config.osascriptTimeoutMs });
 const server = new McpServer({
@@ -16,5 +19,6 @@ const server = new McpServer({
 });
 registerMailTools(server, new MailService(bridge, config));
 registerCalendarTools(server, new CalendarService(new SwiftCalendarBridge({ timeoutMs: config.osascriptTimeoutMs }), config));
+registerRemindersTools(server, new RemindersService(new RemindersNativeBridge({ timeoutMs: config.osascriptTimeoutMs }), config));
 await server.connect(new StdioServerTransport());
 //# sourceMappingURL=index.js.map

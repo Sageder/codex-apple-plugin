@@ -1,14 +1,15 @@
 ---
 name: apple-productivity
-description: Use Apple Mail and Apple Calendar from Codex through the local Apple Productivity MCP plugin. Trigger when the user asks to search, read, summarize, draft, send, archive, or delete Apple Mail messages, or to list calendars, search/read/create/update/delete/show Apple Calendar events.
+description: Use Apple Mail, Apple Calendar, and Apple Reminders from Codex through the local Apple Productivity MCP plugin. Trigger when the user asks to search, read, summarize, draft, send, archive, or delete Apple Mail messages; list/search/read/create/update/delete/show Apple Calendar events; or list/search/read/create/update/complete/delete/move Apple Reminders.
 ---
 
 # Apple Productivity
 
 Use this skill when a task should access local Apple apps, especially Apple Mail
-or Apple Calendar.
+Apple Calendar, or Apple Reminders.
 
-Calendar access uses the Swift/EventKit helper, not JXA.
+Calendar and Reminders access use Swift/EventKit helpers. Mail currently uses
+JXA.
 
 ## Mail workflow
 
@@ -36,9 +37,19 @@ Calendar access uses the Swift/EventKit helper, not JXA.
 
 - `APPLE_PRODUCTIVITY_WRITE_MODE=confirm` means mutating tools ask by default and require `confirm: true`.
 - `APPLE_PRODUCTIVITY_WRITE_MODE=direct` means full local write access.
-- `APPLE_PRODUCTIVITY_WRITE_MODE=draft` is the safe default. Mail writes draft/preview where possible; Calendar writes return previews.
+- `APPLE_PRODUCTIVITY_WRITE_MODE=draft` is the safe default. Mail writes draft/preview where possible; Calendar and Reminders writes return previews.
+
+## Reminders workflow
+
+- Use `reminders_list_lists` when the user asks what lists are available or when a target list is ambiguous.
+- Use `reminders_search` for reminder candidates and handles.
+- Use `reminders_read` only for selected reminders and keep body limits tight.
+- Use `reminders_create`, `reminders_update`, `reminders_complete`, `reminders_delete`, and `reminders_move` only when the configured write guard allows it.
+- Treat `reminders_delete` as real reminder deletion, not a move-to-trash workflow.
+- Swift/EventKit-backed Reminders support includes title, notes/body, due date, reminder alarms, priority, URL, recurrence, completion state, and moving between lists. Do not promise tags, subtasks, or attachments.
 
 ## Privacy
 
-Do not paste large private email bodies or calendar notes unless the user explicitly asks.
-Prefer concise summaries and cite handles, subjects or summaries, senders or calendars, and dates.
+Do not paste large private email bodies, calendar notes, or reminder bodies
+unless the user explicitly asks. Prefer concise summaries and cite handles,
+titles/subjects, lists/senders/calendars, and dates.
