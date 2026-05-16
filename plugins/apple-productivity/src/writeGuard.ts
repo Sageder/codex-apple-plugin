@@ -1,6 +1,6 @@
 import type { RuntimeConfig } from "./config.js";
 
-export type WriteAction = "send" | "archive" | "delete" | "move";
+export type WriteAction = "send" | "archive" | "delete" | "move" | "create" | "update" | "complete";
 
 export interface WriteDecision {
   allowed: boolean;
@@ -44,4 +44,3 @@ export function decideWrite(
     reason: "draft mode prevents irreversible writes"
   };
 }
-

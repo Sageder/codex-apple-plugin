@@ -6,6 +6,7 @@ export interface RuntimeConfig {
   retrievalCandidateLimit: number;
   contextTopK: number;
   osascriptTimeoutMs: number;
+  defaultRemindersList?: string;
 }
 
 function parsePositiveInt(value: string | undefined, fallback: number): number {
@@ -31,7 +32,7 @@ export function getRuntimeConfig(env: NodeJS.ProcessEnv = process.env): RuntimeC
     maxBodyChars: parsePositiveInt(env.APPLE_PRODUCTIVITY_MAX_BODY_CHARS, 12000),
     retrievalCandidateLimit: parsePositiveInt(env.APPLE_PRODUCTIVITY_RETRIEVAL_CANDIDATE_LIMIT, 30),
     contextTopK: parsePositiveInt(env.APPLE_PRODUCTIVITY_CONTEXT_TOP_K, 5),
-    osascriptTimeoutMs: parsePositiveInt(env.APPLE_PRODUCTIVITY_OSASCRIPT_TIMEOUT_MS, 15000)
+    osascriptTimeoutMs: parsePositiveInt(env.APPLE_PRODUCTIVITY_OSASCRIPT_TIMEOUT_MS, 15000),
+    defaultRemindersList: env.APPLE_PRODUCTIVITY_DEFAULT_REMINDERS_LIST?.trim() || undefined
   };
 }
-

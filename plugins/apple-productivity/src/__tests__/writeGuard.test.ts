@@ -15,5 +15,11 @@ describe("write guard", () => {
     expect(decideWrite({ writeMode: "direct" }, "send").allowed).toBe(true);
     expect(decideWrite({ writeMode: "direct" }, "send", false, true).allowed).toBe(false);
   });
-});
 
+  it("covers Reminders write actions with the same policy", () => {
+    expect(decideWrite({ writeMode: "draft" }, "create").allowed).toBe(false);
+    expect(decideWrite({ writeMode: "confirm" }, "update").allowed).toBe(false);
+    expect(decideWrite({ writeMode: "confirm" }, "complete", true).allowed).toBe(true);
+    expect(decideWrite({ writeMode: "direct" }, "move").allowed).toBe(true);
+  });
+});

@@ -5,5 +5,6 @@ export interface RuntimeConfig {
     retrievalCandidateLimit: number;
     contextTopK: number;
     osascriptTimeoutMs: number;
+    defaultRemindersList?: string;
 }
 export declare function getRuntimeConfig(env?: NodeJS.ProcessEnv): RuntimeConfig;
