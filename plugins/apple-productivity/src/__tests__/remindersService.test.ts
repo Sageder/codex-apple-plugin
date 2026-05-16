@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
-import type { AppleBridge } from "../appleBridge.js";
 import type { RuntimeConfig } from "../config.js";
 import { encodeReminderHandle } from "../reminders/handle.js";
+import type { RemindersBackend } from "../reminders/nativeBridge.js";
 import { RemindersService } from "../reminders/remindersService.js";
 import type { RawReminderBody, RawReminderSummary } from "../reminders/types.js";
 
 class MockBridge {
-  calls: Array<{ source: string; input: unknown }> = [];
+  calls: Array<{ action: string; input: unknown }> = [];
 
   constructor(private readonly responses: unknown[] = []) {}
 
-  async runJxa<T>(source: string, input: unknown): Promise<T> {
-    this.calls.push({ source, input });
+  async run<T>(action: string, input: unknown): Promise<T> {
+    this.calls.push({ action, input });
     return this.responses.shift() as T;
   }
 }
@@ -29,7 +29,7 @@ const rawHandle = { listId: "list-1", listName: "Tasks", id: "reminder-1" };
 const encodedHandle = encodeReminderHandle(rawHandle);
 
 function service(bridge: MockBridge, config: Partial<RuntimeConfig> = {}) {
-  return new RemindersService(bridge as unknown as AppleBridge, { ...baseConfig, ...config });
+  return new RemindersService(bridge as unknown as RemindersBackend, { ...baseConfig, ...config });
 }
 
 function rawSummary(): RawReminderSummary {
@@ -53,7 +53,7 @@ function rawBody(): RawReminderBody {
 }
 
 describe("reminders service", () => {
-  it("previews creates in draft mode and does not call JXA", async () => {
+  it("previews creates in draft mode and does not call the native helper", async () => {
     const bridge = new MockBridge();
     const result = await service(bridge).create({ name: "Synthetic task", body: "notes" });
 
@@ -67,11 +67,20 @@ describe("reminders service", () => {
 
   it("normalizes create arguments and encodes returned handles in direct mode", async () => {
     const bridge = new MockBridge([{ created: true, list: { listId: "list-1", listName: "Tasks" }, reminder: rawBody() }]);
-    const result = await service(bridge, { writeMode: "direct" }).create({ name: "Synthetic task" });
+    const result = await service(bridge, { writeMode: "direct" }).create({
+      name: "Synthetic task",
+      url: "https://example.com/task",
+      alarmDates: ["2026-05-17T08:45:00+02:00"],
+      recurrence: { frequency: "daily", interval: 1 }
+    });
 
+    expect(bridge.calls[0]?.action).toBe("create");
     expect(bridge.calls[0]?.input).toMatchObject({
       name: "Synthetic task",
       priority: "none",
+      url: "https://example.com/task",
+      alarmDates: ["2026-05-17T08:45:00+02:00"],
+      recurrence: { frequency: "daily", interval: 1 },
       completed: false,
       defaultList: "Tasks",
       maxBodyChars: 12000
@@ -99,6 +108,7 @@ describe("reminders service", () => {
       confirm: true
     });
 
+    expect(bridge.calls[0]?.action).toBe("complete");
     expect(bridge.calls[0]?.input).toMatchObject({ handles: [rawHandle], completed: true });
     expect(result.reminders[0]?.handle).toBe(encodedHandle);
   });
@@ -111,6 +121,7 @@ describe("reminders service", () => {
       dueDate: null
     });
 
+    expect(bridge.calls[0]?.action).toBe("update");
     expect(bridge.calls[0]?.input).toMatchObject({ handle: rawHandle, body: null, dueDate: null });
     expect(result.reminder.handle).toBe(encodedHandle);
   });

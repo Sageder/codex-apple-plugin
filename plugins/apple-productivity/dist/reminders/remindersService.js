@@ -1,15 +1,14 @@
 import { decideWrite } from "../writeGuard.js";
 import { decodeReminderHandle, encodeReminderHandle } from "./handle.js";
-import { completeRemindersScript, createReminderScript, deleteRemindersScript, listReminderListsScript, moveRemindersScript, readRemindersScript, searchRemindersScript, updateReminderScript } from "./jxaScripts.js";
 export class RemindersService {
-    bridge;
+    backend;
     config;
-    constructor(bridge, config) {
-        this.bridge = bridge;
+    constructor(backend, config) {
+        this.backend = backend;
         this.config = config;
     }
     async listLists(args = {}) {
-        const lists = await this.bridge.runJxa(listReminderListsScript, {
+        const lists = await this.backend.run("listLists", {
             maxCountPerList: args.maxCountPerList ?? 2000
         });
         return { lists };
@@ -27,14 +26,14 @@ export class RemindersService {
             limit: args.limit ?? 20,
             maxScanPerList: args.maxScanPerList ?? 200
         };
-        const raw = await this.bridge.runJxa(searchRemindersScript, input);
+        const raw = await this.backend.run("search", input);
         return {
             reminders: raw.map(encodeSummary).sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
         };
     }
     async read(args) {
         const rawHandles = args.handles.map(decodeReminderHandle);
-        const raw = await this.bridge.runJxa(readRemindersScript, {
+        const raw = await this.backend.run("read", {
             handles: rawHandles,
             maxBodyChars: args.maxBodyChars ?? this.config.maxBodyChars
         });
@@ -57,7 +56,7 @@ export class RemindersService {
                 reason: decision.reason
             };
         }
-        return encodeCreateResult(await this.bridge.runJxa(createReminderScript, input));
+        return encodeCreateResult(await this.backend.run("create", input));
     }
     async update(args) {
         const decision = decideWrite(this.config, "update", args.confirm, args.dryRun);
@@ -76,7 +75,7 @@ export class RemindersService {
                 reason: decision.reason
             };
         }
-        return encodeUpdateResult(await this.bridge.runJxa(updateReminderScript, input));
+        return encodeUpdateResult(await this.backend.run("update", input));
     }
     async complete(args) {
         const decision = decideWrite(this.config, "complete", args.confirm, args.dryRun);
@@ -92,7 +91,7 @@ export class RemindersService {
                 reason: decision.reason
             };
         }
-        const raw = await this.bridge.runJxa(completeRemindersScript, {
+        const raw = await this.backend.run("complete", {
             handles: decoded,
             completed
         });
@@ -113,7 +112,7 @@ export class RemindersService {
                 reason: decision.reason
             };
         }
-        return this.bridge.runJxa(deleteRemindersScript, { handles: decoded });
+        return this.backend.run("delete", { handles: decoded });
     }
     async move(args) {
         const decision = decideWrite(this.config, "move", args.confirm, args.dryRun);
@@ -128,7 +127,7 @@ export class RemindersService {
                 reason: decision.reason
             };
         }
-        return encodeMoveResult(await this.bridge.runJxa(moveRemindersScript, {
+        return encodeMoveResult(await this.backend.run("move", {
             handles: decoded,
             list: args.list
         }));
@@ -173,7 +172,10 @@ function previewCreate(args, defaultList) {
         list: args.list ?? defaultList ?? null,
         dueDate: args.dueDate,
         remindMeDate: args.remindMeDate,
+        alarmDates: args.alarmDates,
         priority: args.priority ?? "none",
+        url: args.url,
+        recurrence: args.recurrence,
         completed: args.completed ?? false
     };
 }
@@ -184,7 +186,10 @@ function previewUpdate(args) {
         list: args.list,
         dueDate: args.dueDate,
         remindMeDate: args.remindMeDate,
+        alarmDates: args.alarmDates,
         priority: args.priority,
+        url: args.url,
+        recurrence: args.recurrence,
         completed: args.completed
     };
 }

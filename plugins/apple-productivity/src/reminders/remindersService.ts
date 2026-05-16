@@ -1,17 +1,7 @@
-import { AppleBridge } from "../appleBridge.js";
 import type { RuntimeConfig } from "../config.js";
 import { decideWrite } from "../writeGuard.js";
 import { decodeReminderHandle, encodeReminderHandle } from "./handle.js";
-import {
-  completeRemindersScript,
-  createReminderScript,
-  deleteRemindersScript,
-  listReminderListsScript,
-  moveRemindersScript,
-  readRemindersScript,
-  searchRemindersScript,
-  updateReminderScript
-} from "./jxaScripts.js";
+import type { RemindersBackend } from "./nativeBridge.js";
 import type {
   RawReminderBody,
   RawReminderSummary,
@@ -19,6 +9,7 @@ import type {
   ReminderHandlePayload,
   ReminderList,
   ReminderPriority,
+  ReminderRecurrence,
   ReminderSummary,
   SearchRemindersInput
 } from "./types.js";
@@ -51,7 +42,10 @@ export interface RemindersCreateArgs {
   list?: string;
   dueDate?: string;
   remindMeDate?: string;
+  alarmDates?: string[];
   priority?: ReminderPriority;
+  url?: string;
+  recurrence?: ReminderRecurrence;
   completed?: boolean;
   confirm?: boolean;
   dryRun?: boolean;
@@ -64,7 +58,10 @@ export interface RemindersUpdateArgs {
   list?: string;
   dueDate?: string | null;
   remindMeDate?: string | null;
+  alarmDates?: string[] | null;
   priority?: ReminderPriority | null;
+  url?: string | null;
+  recurrence?: ReminderRecurrence | null;
   completed?: boolean;
   confirm?: boolean;
   dryRun?: boolean;
@@ -117,12 +114,12 @@ interface RawMoveResult {
 
 export class RemindersService {
   constructor(
-    private readonly bridge: AppleBridge,
+    private readonly backend: RemindersBackend,
     private readonly config: RuntimeConfig
   ) {}
 
   async listLists(args: RemindersListListsArgs = {}): Promise<{ lists: ReminderList[] }> {
-    const lists = await this.bridge.runJxa<ReminderList[]>(listReminderListsScript, {
+    const lists = await this.backend.run<ReminderList[]>("listLists", {
       maxCountPerList: args.maxCountPerList ?? 2000
     });
     return { lists };
@@ -142,7 +139,7 @@ export class RemindersService {
       maxScanPerList: args.maxScanPerList ?? 200
     };
 
-    const raw = await this.bridge.runJxa<RawReminderSummary[]>(searchRemindersScript, input);
+    const raw = await this.backend.run<RawReminderSummary[]>("search", input);
     return {
       reminders: raw.map(encodeSummary).sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
     };
@@ -150,7 +147,7 @@ export class RemindersService {
 
   async read(args: RemindersReadArgs): Promise<{ reminders: ReminderBody[] }> {
     const rawHandles = args.handles.map(decodeReminderHandle);
-    const raw = await this.bridge.runJxa<RawReminderBody[]>(readRemindersScript, {
+    const raw = await this.backend.run<RawReminderBody[]>("read", {
       handles: rawHandles,
       maxBodyChars: args.maxBodyChars ?? this.config.maxBodyChars
     });
@@ -177,7 +174,7 @@ export class RemindersService {
       };
     }
 
-    return encodeCreateResult(await this.bridge.runJxa<RawCreateResult>(createReminderScript, input));
+    return encodeCreateResult(await this.backend.run<RawCreateResult>("create", input));
   }
 
   async update(args: RemindersUpdateArgs) {
@@ -199,7 +196,7 @@ export class RemindersService {
       };
     }
 
-    return encodeUpdateResult(await this.bridge.runJxa<RawUpdateResult>(updateReminderScript, input));
+    return encodeUpdateResult(await this.backend.run<RawUpdateResult>("update", input));
   }
 
   async complete(args: RemindersCompleteArgs) {
@@ -218,7 +215,7 @@ export class RemindersService {
       };
     }
 
-    const raw = await this.bridge.runJxa<RawCompleteResult>(completeRemindersScript, {
+    const raw = await this.backend.run<RawCompleteResult>("complete", {
       handles: decoded,
       completed
     });
@@ -242,7 +239,7 @@ export class RemindersService {
       };
     }
 
-    return this.bridge.runJxa(deleteRemindersScript, { handles: decoded });
+    return this.backend.run("delete", { handles: decoded });
   }
 
   async move(args: RemindersMoveArgs) {
@@ -261,7 +258,7 @@ export class RemindersService {
     }
 
     return encodeMoveResult(
-      await this.bridge.runJxa<RawMoveResult>(moveRemindersScript, {
+      await this.backend.run<RawMoveResult>("move", {
         handles: decoded,
         list: args.list
       })
@@ -313,7 +310,10 @@ function previewCreate(args: RemindersCreateArgs, defaultList?: string) {
     list: args.list ?? defaultList ?? null,
     dueDate: args.dueDate,
     remindMeDate: args.remindMeDate,
+    alarmDates: args.alarmDates,
     priority: args.priority ?? "none",
+    url: args.url,
+    recurrence: args.recurrence,
     completed: args.completed ?? false
   };
 }
@@ -325,7 +325,10 @@ function previewUpdate(args: RemindersUpdateArgs) {
     list: args.list,
     dueDate: args.dueDate,
     remindMeDate: args.remindMeDate,
+    alarmDates: args.alarmDates,
     priority: args.priority,
+    url: args.url,
+    recurrence: args.recurrence,
     completed: args.completed
   };
 }

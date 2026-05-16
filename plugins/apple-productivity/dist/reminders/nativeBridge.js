@@ -1,0 +1,77 @@
+import { spawn } from "node:child_process";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+export class RemindersNativeBridgeError extends Error {
+    stderr;
+    constructor(message, stderr) {
+        super(message);
+        this.stderr = stderr;
+        this.name = "RemindersNativeBridgeError";
+    }
+}
+export class RemindersNativeBridge {
+    options;
+    helperPath;
+    constructor(options) {
+        this.options = options;
+        this.helperPath = options.helperPath ?? join(dirname(fileURLToPath(import.meta.url)), "reminders-helper");
+    }
+    run(action, input = {}) {
+        return new Promise((resolve, reject) => {
+            const child = spawn(this.helperPath, [action], {
+                stdio: ["pipe", "pipe", "pipe"]
+            });
+            let stdout = "";
+            let stderr = "";
+            let settled = false;
+            const timer = setTimeout(() => {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                child.kill("SIGTERM");
+                reject(new RemindersNativeBridgeError(`Reminders helper timed out after ${this.options.timeoutMs}ms`));
+            }, this.options.timeoutMs);
+            child.stdout.setEncoding("utf8");
+            child.stderr.setEncoding("utf8");
+            child.stdout.on("data", (chunk) => {
+                stdout += chunk;
+            });
+            child.stderr.on("data", (chunk) => {
+                stderr += chunk;
+            });
+            child.on("error", (error) => {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                clearTimeout(timer);
+                reject(new RemindersNativeBridgeError(`Failed to start Reminders helper: ${error.message}`));
+            });
+            child.on("close", (code) => {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                clearTimeout(timer);
+                if (code !== 0) {
+                    reject(new RemindersNativeBridgeError(`Reminders helper exited with code ${code}`, stderr.trim().slice(0, 2000)));
+                    return;
+                }
+                const trimmed = stdout.trim();
+                if (!trimmed) {
+                    resolve(undefined);
+                    return;
+                }
+                try {
+                    resolve(JSON.parse(trimmed));
+                }
+                catch (error) {
+                    reject(new RemindersNativeBridgeError(`Reminders helper returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`));
+                }
+            });
+            child.stdin.end(JSON.stringify(input));
+        });
+    }
+}
+//# sourceMappingURL=nativeBridge.js.map

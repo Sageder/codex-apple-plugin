@@ -5,6 +5,7 @@ import { AppleBridge } from "./appleBridge.js";
 import { getRuntimeConfig } from "./config.js";
 import { MailService } from "./mail/mailService.js";
 import { registerMailTools } from "./mail/tools.js";
+import { RemindersNativeBridge } from "./reminders/nativeBridge.js";
 import { RemindersService } from "./reminders/remindersService.js";
 import { registerRemindersTools } from "./reminders/tools.js";
 
@@ -17,6 +18,6 @@ const server = new McpServer({
 });
 
 registerMailTools(server, new MailService(bridge, config));
-registerRemindersTools(server, new RemindersService(bridge, config));
+registerRemindersTools(server, new RemindersService(new RemindersNativeBridge({ timeoutMs: config.osascriptTimeoutMs }), config));
 
 await server.connect(new StdioServerTransport());

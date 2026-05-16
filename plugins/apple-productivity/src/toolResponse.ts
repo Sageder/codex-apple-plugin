@@ -1,4 +1,5 @@
 import { AppleBridgeError } from "./appleBridge.js";
+import { RemindersNativeBridgeError } from "./reminders/nativeBridge.js";
 
 export function jsonResponse(data: unknown) {
   return {
@@ -15,6 +16,8 @@ export function errorResponse(error: unknown) {
   const data =
     error instanceof AppleBridgeError
       ? { error: error.message, details: error.stderr }
+      : error instanceof RemindersNativeBridgeError
+        ? { error: error.message, details: error.stderr }
       : { error: error instanceof Error ? error.message : String(error) };
 
   return {
@@ -27,4 +30,3 @@ export function errorResponse(error: unknown) {
     ]
   };
 }
-

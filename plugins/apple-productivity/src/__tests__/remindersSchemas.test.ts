@@ -23,17 +23,26 @@ describe("reminder schemas", () => {
         list: "Tasks",
         dueDate: "2026-05-17T10:00:00+02:00",
         remindMeDate: "2026-05-17T09:30:00+02:00",
+        alarmDates: ["2026-05-17T08:45:00+02:00"],
         priority: "high",
+        url: "https://example.com/task",
+        recurrence: { frequency: "weekly", interval: 2 },
         completed: false
       })
-    ).toMatchObject({ name: "Synthetic task", priority: "high" });
+    ).toMatchObject({
+      name: "Synthetic task",
+      alarmDates: ["2026-05-17T08:45:00+02:00"],
+      priority: "high",
+      url: "https://example.com/task",
+      recurrence: { frequency: "weekly", interval: 2 }
+    });
   });
 
-  it("rejects unsupported advanced fields instead of hiding them in notes", () => {
+  it("rejects fields that still are not backed by EventKit", () => {
     expect(() =>
       remindersCreateSchema.parse({
         name: "Synthetic task",
-        recurrence: { frequency: "daily" }
+        subtasks: ["Nested"]
       })
     ).toThrow();
   });
@@ -45,9 +54,20 @@ describe("reminder schemas", () => {
         body: null,
         dueDate: null,
         remindMeDate: null,
-        priority: null
+        alarmDates: null,
+        priority: null,
+        url: null,
+        recurrence: null
       })
-    ).toMatchObject({ body: null, dueDate: null, remindMeDate: null, priority: null });
+    ).toMatchObject({
+      body: null,
+      dueDate: null,
+      remindMeDate: null,
+      alarmDates: null,
+      priority: null,
+      url: null,
+      recurrence: null
+    });
   });
 
   it("requires at least one handle for write operations", () => {

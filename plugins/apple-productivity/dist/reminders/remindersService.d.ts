@@ -1,6 +1,6 @@
-import { AppleBridge } from "../appleBridge.js";
 import type { RuntimeConfig } from "../config.js";
-import type { RawReminderSummary, ReminderBody, ReminderHandlePayload, ReminderList, ReminderPriority, ReminderSummary } from "./types.js";
+import type { RemindersBackend } from "./nativeBridge.js";
+import type { RawReminderSummary, ReminderBody, ReminderHandlePayload, ReminderList, ReminderPriority, ReminderRecurrence, ReminderSummary } from "./types.js";
 export interface RemindersListListsArgs {
     maxCountPerList?: number;
 }
@@ -26,7 +26,10 @@ export interface RemindersCreateArgs {
     list?: string;
     dueDate?: string;
     remindMeDate?: string;
+    alarmDates?: string[];
     priority?: ReminderPriority;
+    url?: string;
+    recurrence?: ReminderRecurrence;
     completed?: boolean;
     confirm?: boolean;
     dryRun?: boolean;
@@ -38,7 +41,10 @@ export interface RemindersUpdateArgs {
     list?: string;
     dueDate?: string | null;
     remindMeDate?: string | null;
+    alarmDates?: string[] | null;
     priority?: ReminderPriority | null;
+    url?: string | null;
+    recurrence?: ReminderRecurrence | null;
     completed?: boolean;
     confirm?: boolean;
     dryRun?: boolean;
@@ -58,9 +64,9 @@ export interface RemindersMoveArgs extends RemindersWriteArgs {
     list: string;
 }
 export declare class RemindersService {
-    private readonly bridge;
+    private readonly backend;
     private readonly config;
-    constructor(bridge: AppleBridge, config: RuntimeConfig);
+    constructor(backend: RemindersBackend, config: RuntimeConfig);
     listLists(args?: RemindersListListsArgs): Promise<{
         lists: ReminderList[];
     }>;
@@ -86,7 +92,10 @@ export declare class RemindersService {
             list: string | null;
             dueDate: string | undefined;
             remindMeDate: string | undefined;
+            alarmDates: string[] | undefined;
             priority: ReminderPriority;
+            url: string | undefined;
+            recurrence: ReminderRecurrence | undefined;
             completed: boolean;
         };
         reason: string;
@@ -115,7 +124,10 @@ export declare class RemindersService {
             list: string | undefined;
             dueDate: string | null | undefined;
             remindMeDate: string | null | undefined;
+            alarmDates: string[] | null | undefined;
             priority: ReminderPriority | null | undefined;
+            url: string | null | undefined;
+            recurrence: ReminderRecurrence | null | undefined;
             completed: boolean | undefined;
         };
         reason: string;

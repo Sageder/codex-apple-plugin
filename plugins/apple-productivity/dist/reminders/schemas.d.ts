@@ -35,12 +35,24 @@ export declare const remindersCreateSchema: z.ZodObject<{
     list: z.ZodOptional<z.ZodString>;
     dueDate: z.ZodOptional<z.ZodString>;
     remindMeDate: z.ZodOptional<z.ZodString>;
+    alarmDates: z.ZodOptional<z.ZodArray<z.ZodString>>;
     priority: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
         none: "none";
         low: "low";
         medium: "medium";
         high: "high";
     }>>>;
+    url: z.ZodOptional<z.ZodString>;
+    recurrence: z.ZodOptional<z.ZodObject<{
+        frequency: z.ZodEnum<{
+            daily: "daily";
+            weekly: "weekly";
+            monthly: "monthly";
+            yearly: "yearly";
+        }>;
+        interval: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
+        endDate: z.ZodOptional<z.ZodString>;
+    }, z.core.$strict>>;
     completed: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
 }, z.core.$strict>;
 export declare const remindersUpdateSchema: z.ZodObject<{
@@ -52,12 +64,24 @@ export declare const remindersUpdateSchema: z.ZodObject<{
     list: z.ZodOptional<z.ZodString>;
     dueDate: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     remindMeDate: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    alarmDates: z.ZodOptional<z.ZodNullable<z.ZodArray<z.ZodString>>>;
     priority: z.ZodOptional<z.ZodNullable<z.ZodEnum<{
         none: "none";
         low: "low";
         medium: "medium";
         high: "high";
     }>>>;
+    url: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    recurrence: z.ZodOptional<z.ZodNullable<z.ZodObject<{
+        frequency: z.ZodEnum<{
+            daily: "daily";
+            weekly: "weekly";
+            monthly: "monthly";
+            yearly: "yearly";
+        }>;
+        interval: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
+        endDate: z.ZodOptional<z.ZodString>;
+    }, z.core.$strict>>>;
     completed: z.ZodOptional<z.ZodBoolean>;
 }, z.core.$strict>;
 export declare const remindersCompleteSchema: z.ZodObject<{

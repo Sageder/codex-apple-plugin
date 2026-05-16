@@ -1,4 +1,10 @@
 export type ReminderPriority = "none" | "low" | "medium" | "high";
+export type ReminderRecurrenceFrequency = "daily" | "weekly" | "monthly" | "yearly";
+export interface ReminderRecurrence {
+    frequency: ReminderRecurrenceFrequency;
+    interval?: number;
+    endDate?: string;
+}
 export interface ReminderList {
     id: string;
     name: string;
@@ -22,6 +28,9 @@ export interface ReminderSummary {
     priority: ReminderPriority;
     creationDate?: string;
     modificationDate?: string;
+    url?: string;
+    alarmDates?: string[];
+    recurrence?: ReminderRecurrence;
     score?: number;
 }
 export interface ReminderBody extends ReminderSummary {

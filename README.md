@@ -3,8 +3,9 @@
 Local Codex plugin for Apple Mail and Apple Reminders, with the shared bridge
 ready for Apple Calendar next.
 
-The plugin talks to macOS apps through JXA via `/usr/bin/osascript`; it does not
-store a persistent Mail or Reminders index. Retrieval is live and ephemeral.
+The plugin talks to local macOS apps without storing persistent Mail or
+Reminders indexes. Mail currently uses JXA via `/usr/bin/osascript`; Reminders
+uses a native Swift/EventKit helper. Retrieval is live and ephemeral.
 
 ## Tools
 
@@ -13,10 +14,11 @@ reading, composing, sending, archiving, and moving messages to trash with
 guarded writes.
 
 Reminders tools cover list discovery, live search, reading, creating, updating,
-completing/reopening, deleting, and moving reminders between lists. JXA-backed
-Reminders v1 supports title, notes/body, due date, remind-me date, priority, and
-completion state. Recurrence, multiple alarms, tags, subtasks, and attachments
-are intentionally unsupported until a richer backend is added.
+completing/reopening, deleting, and moving reminders between lists. The
+Swift/EventKit backend supports title, notes/body, due date, reminder alarms,
+priority, URL, recurrence, and completion state. Tags, subtasks, and attachments
+are intentionally unsupported until Apple exposes a stable local automation path
+for them.
 
 The first Reminders read/search/write on a Mac may trigger macOS Automation or
 Reminders privacy prompts. If local Reminders is slow to authorize or sync,
@@ -30,6 +32,9 @@ npm run build
 npm run test
 npm run smoke:mail
 ```
+
+`npm run build` also compiles `plugins/apple-productivity/dist/reminders/reminders-helper`
+from the Swift source.
 
 ## Safety
 

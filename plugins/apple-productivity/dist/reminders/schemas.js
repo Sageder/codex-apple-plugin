@@ -2,6 +2,13 @@ import { z } from "zod";
 const optionalDateString = z.string().min(1).optional().describe("ISO date or datetime string.");
 const nullableDateString = z.string().min(1).nullable().optional().describe("ISO date or datetime string, or null to clear.");
 const reminderPrioritySchema = z.enum(["none", "low", "medium", "high"]);
+const reminderRecurrenceSchema = z
+    .object({
+    frequency: z.enum(["daily", "weekly", "monthly", "yearly"]),
+    interval: z.number().int().positive().max(999).optional().default(1),
+    endDate: optionalDateString
+})
+    .strict();
 const writeOptions = {
     confirm: z.boolean().optional(),
     dryRun: z.boolean().optional()
@@ -38,7 +45,10 @@ export const remindersCreateSchema = z
     list: z.string().optional().describe("Reminder list name or identifier. Falls back to configured/default list."),
     dueDate: optionalDateString,
     remindMeDate: optionalDateString,
+    alarmDates: z.array(z.string().min(1)).max(10).optional(),
     priority: reminderPrioritySchema.optional().default("none"),
+    url: z.string().url().optional(),
+    recurrence: reminderRecurrenceSchema.optional(),
     completed: z.boolean().optional().default(false),
     ...writeOptions
 })
@@ -51,7 +61,10 @@ export const remindersUpdateSchema = z
     list: z.string().optional().describe("Move to this reminder list name or identifier after patching fields."),
     dueDate: nullableDateString,
     remindMeDate: nullableDateString,
+    alarmDates: z.array(z.string().min(1)).max(10).nullable().optional(),
     priority: reminderPrioritySchema.nullable().optional(),
+    url: z.string().url().nullable().optional(),
+    recurrence: reminderRecurrenceSchema.nullable().optional(),
     completed: z.boolean().optional(),
     ...writeOptions
 })

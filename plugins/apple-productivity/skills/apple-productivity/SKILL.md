@@ -24,7 +24,7 @@ or Apple Reminders.
 - Use `reminders_read` only for selected reminders and keep body limits tight.
 - Use `reminders_create`, `reminders_update`, `reminders_complete`, `reminders_delete`, and `reminders_move` only when the configured write guard allows it.
 - Treat `reminders_delete` as real reminder deletion, not a move-to-trash workflow.
-- JXA-backed Reminders support includes title, notes/body, due date, remind-me date, priority, completion state, and moving between lists. Do not promise recurrence, multiple alarms, tags, subtasks, or attachments.
+- Swift/EventKit-backed Reminders support includes title, notes/body, due date, reminder alarms, priority, URL, recurrence, completion state, and moving between lists. Do not promise tags, subtasks, or attachments.
 
 ## Privacy
 
