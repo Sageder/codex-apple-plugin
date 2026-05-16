@@ -6,7 +6,15 @@ This repository contains a local Codex plugin that exposes one MCP server,
 `apple-productivity`. It talks to the built-in Apple apps through local Swift
 helpers and returns live data from the Mac it is running on.
 
-![Apple Productivity icon](plugins/apple-productivity/assets/apple-productivity.png)
+<p align="center">
+  <img src="plugins/apple-productivity/assets/apple-mail.svg" alt="Apple Mail" width="82" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="plugins/apple-productivity/assets/apple-reminders.svg" alt="Apple Reminders" width="82" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="plugins/apple-productivity/assets/apple-calendar.svg" alt="Apple Calendar" width="82" />
+</p>
+
+<p align="center"><strong>Mail</strong> · <strong>Reminders</strong> · <strong>Calendar</strong></p>
 
 ## Features
 

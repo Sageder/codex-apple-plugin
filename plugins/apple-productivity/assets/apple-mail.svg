@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="Apple Mail">
+  <defs>
+    <linearGradient id="mail-bg" x1="64" y1="4" x2="64" y2="124" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1E73F8"/>
+      <stop offset="1" stop-color="#20C8E8"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="27" fill="url(#mail-bg)"/>
+  <path fill="#fff" d="M22 43c0-4.4 3.6-8 8-8h68c4.4 0 8 3.6 8 8v42c0 4.4-3.6 8-8 8H30c-4.4 0-8-3.6-8-8V43z"/>
+  <path fill="none" stroke="#1589F2" stroke-linecap="round" stroke-linejoin="round" stroke-width="4.8" d="M25.5 39.5 57.8 69c3.5 3.2 8.9 3.2 12.4 0l32.3-29.5"/>
+  <path fill="none" stroke="#1589F2" stroke-linecap="round" stroke-linejoin="round" stroke-width="4.8" d="M25.5 90.5 54 64m48.5 26.5L74 64"/>
+</svg>
