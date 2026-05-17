@@ -148,11 +148,6 @@ export class MailService {
   async send(args: MailComposeArgs & { confirm?: boolean; dryRun?: boolean }) {
     const decision = decideWrite(this.config, "mail.send", args.confirm, args.dryRun);
     if (!decision.allowed) {
-      if (this.config.writeMode === "draft" && !args.dryRun) {
-        const draft = await this.compose({ ...args, visible: true });
-        return { mode: decision.mode, allowed: false, sent: false, drafted: true, reason: decision.reason, draft };
-      }
-
       return { mode: decision.mode, allowed: false, sent: false, preview: previewMessage(args), reason: decision.reason };
     }
 

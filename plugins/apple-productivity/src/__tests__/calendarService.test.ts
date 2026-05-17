@@ -15,7 +15,7 @@ class FakeBridge {
 }
 
 const baseConfig: RuntimeConfig = {
-  writeMode: "draft",
+  writeMode: "ask",
   maxBodyChars: 500,
   retrievalCandidateLimit: 30,
   contextTopK: 5,
@@ -36,14 +36,14 @@ const handle = encodeCalendarEventHandle({
 });
 
 describe("calendar service write policy", () => {
-  it("previews create events in draft mode without calling the helper", async () => {
+  it("previews create events in ask mode without calling the helper", async () => {
     const bridge = new FakeBridge();
     const service = new CalendarService(bridge, baseConfig);
 
     const result = await service.createEvent(createArgs);
 
     expect(bridge.calls).toHaveLength(0);
-    expect(result).toMatchObject({ mode: "draft", allowed: false, created: false });
+    expect(result).toMatchObject({ mode: "ask", allowed: false, created: false });
   });
 
   it("creates events in direct mode", async () => {
@@ -73,14 +73,14 @@ describe("calendar service write policy", () => {
     expect(result.event.handle).toEqual(expect.any(String));
   });
 
-  it("blocks update in confirm mode without explicit confirmation", async () => {
+  it("blocks update in ask mode without explicit confirmation", async () => {
     const bridge = new FakeBridge();
-    const service = new CalendarService(bridge, { ...baseConfig, writeMode: "confirm" });
+    const service = new CalendarService(bridge, { ...baseConfig, writeMode: "ask" });
 
     const result = await service.updateEvent({ handle, span: "all", patch: { location: "ETH" } });
 
     expect(bridge.calls).toHaveLength(0);
-    expect(result).toMatchObject({ mode: "confirm", allowed: false, updated: false });
+    expect(result).toMatchObject({ mode: "ask", allowed: false, updated: false });
   });
 
   it("updates with confirmation", async () => {
@@ -100,7 +100,7 @@ describe("calendar service write policy", () => {
       recurring: false
     };
     const bridge = new FakeBridge({ updated: true, span: "all", event: rawEvent });
-    const service = new CalendarService(bridge, { ...baseConfig, writeMode: "confirm" });
+    const service = new CalendarService(bridge, { ...baseConfig, writeMode: "ask" });
 
     await service.updateEvent({ handle, span: "all", patch: { location: "ETH" }, confirm: true });
 

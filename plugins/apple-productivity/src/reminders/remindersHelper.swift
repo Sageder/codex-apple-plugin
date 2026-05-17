@@ -597,21 +597,19 @@ final class ReminderRunner {
     }
 
     private func decideWrite(mode: String?, action: String, confirm: Bool?, dryRun: Bool?) -> WriteDecision {
-        let writeMode = mode ?? "draft"
+        let rawMode = mode ?? "ask"
+        let writeMode = rawMode == "direct" ? "direct" : "ask"
         if dryRun == true {
             return WriteDecision(allowed: false, mode: writeMode, reason: "\(action) dry run requested")
         }
         if writeMode == "direct" {
             return WriteDecision(allowed: true, mode: writeMode, reason: "direct write mode enabled")
         }
-        if writeMode == "confirm" {
-            return WriteDecision(
-                allowed: confirm == true,
-                mode: writeMode,
-                reason: confirm == true ? "explicit confirmation supplied" : "confirmation required"
-            )
-        }
-        return WriteDecision(allowed: false, mode: writeMode, reason: "draft mode prevents irreversible writes")
+        return WriteDecision(
+            allowed: confirm == true,
+            mode: writeMode,
+            reason: confirm == true ? "explicit confirmation supplied" : "confirm: true required in ask mode"
+        )
     }
 
     private func bodyPreview(_ input: UpdateInput) -> BodyPreview? {

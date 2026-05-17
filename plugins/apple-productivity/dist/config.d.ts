@@ -1,4 +1,4 @@
-export type WriteMode = "draft" | "confirm" | "direct";
+export type WriteMode = "ask" | "direct";
 export interface RuntimeConfig {
     writeMode: WriteMode;
     maxBodyChars: number;

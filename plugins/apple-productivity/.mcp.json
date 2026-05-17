@@ -5,7 +5,7 @@
       "cwd": ".",
       "args": ["./dist/index.mjs"],
       "env": {
-        "APPLE_PRODUCTIVITY_WRITE_MODE": "draft",
+        "APPLE_PRODUCTIVITY_WRITE_MODE": "ask",
         "APPLE_PRODUCTIVITY_HELPER_TIMEOUT_MS": "60000",
         "APPLE_PRODUCTIVITY_DEFAULT_REMINDERS_LIST": ""
       }

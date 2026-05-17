@@ -17,7 +17,7 @@ class MockBackend {
 }
 
 const baseConfig: RuntimeConfig = {
-  writeMode: "draft",
+  writeMode: "ask",
   maxBodyChars: 12000,
   retrievalCandidateLimit: 30,
   contextTopK: 5,
@@ -89,12 +89,12 @@ describe("reminders service", () => {
     expect(result).toEqual({ reminders: [body()] });
   });
 
-  it("forwards creates to Swift with write config", async () => {
+  it("previews creates in ask mode without calling Swift", async () => {
     const response = {
-      mode: "draft",
+      mode: "ask",
       created: false,
       preview: { name: "Synthetic task", bodyChars: 5, list: "Tasks" },
-      reason: "draft mode prevents irreversible writes"
+      reason: "confirm: true required in ask mode"
     };
     const backend = new MockBackend([response]);
     const result = await service(backend).create({ name: "Synthetic task", body: "notes" });
@@ -134,9 +134,9 @@ describe("reminders service", () => {
     const move = await service(backend).move({ handles: [encodedHandle], list: "Later" });
 
     expect(backend.calls).toHaveLength(0);
-    expect(complete).toMatchObject({ mode: "draft", allowed: false, completed: false, requestedCompleted: true });
-    expect(deletion).toMatchObject({ mode: "draft", allowed: false, deleted: false, count: 1 });
-    expect(move).toMatchObject({ mode: "draft", allowed: false, moved: false, list: "Later", count: 1 });
+    expect(complete).toMatchObject({ mode: "ask", allowed: false, completed: false, requestedCompleted: true });
+    expect(deletion).toMatchObject({ mode: "ask", allowed: false, deleted: false, count: 1 });
+    expect(move).toMatchObject({ mode: "ask", allowed: false, moved: false, list: "Later", count: 1 });
   });
 
   it("forwards batch writes to Swift once the shared write guard allows them", async () => {

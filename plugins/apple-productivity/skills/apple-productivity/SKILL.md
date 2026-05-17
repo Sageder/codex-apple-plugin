@@ -37,9 +37,10 @@ access use Swift/EventKit helpers.
 
 - Guarded Mail, Calendar, and Reminders mutating tools share the same write
   guard and accept `confirm` plus `dryRun`.
-- `APPLE_PRODUCTIVITY_WRITE_MODE=confirm` means mutating tools ask by default and require `confirm: true`.
+- `APPLE_PRODUCTIVITY_WRITE_MODE=ask` is the default. Mutating tools return a preview or target summary unless the call includes `confirm: true`.
 - `APPLE_PRODUCTIVITY_WRITE_MODE=direct` means full local write access.
-- `APPLE_PRODUCTIVITY_WRITE_MODE=draft` is the safe default. Mail writes draft/preview where possible; Calendar and Reminders writes return previews.
+- `APPLE_PRODUCTIVITY_WRITE_MODE=confirm` is accepted as a legacy alias for `ask`.
+- `mail_send` no longer creates drafts as a safety fallback. Use `mail_compose` explicitly when the user wants a draft.
 
 ## Reminders workflow
 

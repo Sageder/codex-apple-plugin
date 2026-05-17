@@ -81,7 +81,7 @@ export function registerMailTools(server: McpServer, mail: MailService): void {
     "mail_send",
     {
       title: "Send Apple Mail message",
-      description: "Send an email through Apple Mail when the write guard permits it; otherwise draft or preview.",
+      description: "Send an email through Apple Mail when the write guard permits it; otherwise return a preview.",
       inputSchema: mailSendSchema,
       annotations: { readOnlyHint: false, destructiveHint: true }
     },

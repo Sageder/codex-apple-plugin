@@ -30965,17 +30965,10 @@ function decideWrite(config3, action, confirm, dryRun) {
       reason: "direct write mode enabled"
     };
   }
-  if (config3.writeMode === "confirm") {
-    return {
-      allowed: confirm === true,
-      mode: config3.writeMode,
-      reason: confirm === true ? "explicit confirmation supplied" : "confirmation required"
-    };
-  }
   return {
-    allowed: false,
+    allowed: confirm === true,
     mode: config3.writeMode,
-    reason: "draft mode prevents irreversible writes"
+    reason: confirm === true ? "explicit confirmation supplied" : "confirm: true required in ask mode"
   };
 }
 function actionLabel(action) {
@@ -31605,10 +31598,13 @@ function parsePositiveInt(value, fallback) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 function parseWriteMode(value) {
-  if (value === "confirm" || value === "direct" || value === "draft") {
-    return value;
+  if (value === "direct") {
+    return "direct";
   }
-  return "draft";
+  if (value === "ask" || value === "confirm") {
+    return "ask";
+  }
+  return "ask";
 }
 function getRuntimeConfig(env = process.env) {
   return {
@@ -31831,10 +31827,6 @@ var MailService = class {
   async send(args) {
     const decision = decideWrite(this.config, "mail.send", args.confirm, args.dryRun);
     if (!decision.allowed) {
-      if (this.config.writeMode === "draft" && !args.dryRun) {
-        const draft = await this.compose({ ...args, visible: true });
-        return { mode: decision.mode, allowed: false, sent: false, drafted: true, reason: decision.reason, draft };
-      }
       return { mode: decision.mode, allowed: false, sent: false, preview: previewMessage(args), reason: decision.reason };
     }
     return this.bridge.call("mail.send", {
@@ -32081,7 +32073,7 @@ function registerMailTools(server2, mail) {
     "mail_send",
     {
       title: "Send Apple Mail message",
-      description: "Send an email through Apple Mail when the write guard permits it; otherwise draft or preview.",
+      description: "Send an email through Apple Mail when the write guard permits it; otherwise return a preview.",
       inputSchema: mailSendSchema,
       annotations: { readOnlyHint: false, destructiveHint: true }
     },

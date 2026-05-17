@@ -46,18 +46,10 @@ export function decideWrite(
     };
   }
 
-  if (config.writeMode === "confirm") {
-    return {
-      allowed: confirm === true,
-      mode: config.writeMode,
-      reason: confirm === true ? "explicit confirmation supplied" : "confirmation required"
-    };
-  }
-
   return {
-    allowed: false,
+    allowed: confirm === true,
     mode: config.writeMode,
-    reason: "draft mode prevents irreversible writes"
+    reason: confirm === true ? "explicit confirmation supplied" : "confirm: true required in ask mode"
   };
 }
 

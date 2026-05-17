@@ -24,7 +24,7 @@ helpers and returns live data from the Mac it is running on.
   events.
 - List reminder lists, search/read reminders, and create/update/complete/delete
   or move reminders.
-- Shared write guard for mutating operations, with safe draft mode by default.
+- Shared write guard for mutating operations, with ask mode by default.
 - Live, ephemeral reads. The plugin does not build or store a persistent local
   mail, calendar, or reminders index.
 
@@ -58,7 +58,7 @@ Then point your MCP client at the built server:
         "/absolute/path/to/codex-apple-plugin/plugins/apple-productivity/dist/index.js"
       ],
       "env": {
-        "APPLE_PRODUCTIVITY_WRITE_MODE": "draft",
+        "APPLE_PRODUCTIVITY_WRITE_MODE": "ask",
         "APPLE_PRODUCTIVITY_HELPER_TIMEOUT_MS": "60000"
       }
     }
@@ -76,11 +76,16 @@ Writes are controlled by `APPLE_PRODUCTIVITY_WRITE_MODE`:
 
 | Mode | Behavior |
 | --- | --- |
-| `draft` | Default. Mail sends become drafts or previews where possible; Calendar and Reminders writes return previews. |
-| `confirm` | Mutating tools write only when the request includes `confirm: true`. |
+| `ask` | Default. Mutating tools do not write unless the request includes `confirm: true`. Without confirmation they return a preview or target summary plus `allowed: false`. |
 | `direct` | Mutating tools write locally without an extra confirmation flag. Use only in trusted local setups. |
 
-Every guarded write tool also accepts `dryRun: true`.
+In ask mode, the normal flow is: call the tool once without `confirm` to review
+what would change, ask the user for approval, then call the same tool with
+`confirm: true` to apply it. `confirm` is still accepted as a legacy alias for
+`ask` in `APPLE_PRODUCTIVITY_WRITE_MODE`.
+
+Every guarded write tool also accepts `dryRun: true`, which never writes even in
+direct mode.
 
 Important delete semantics:
 
@@ -97,7 +102,7 @@ visible compose window or creates a draft.
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `APPLE_PRODUCTIVITY_WRITE_MODE` | `draft` | `draft`, `confirm`, or `direct`. |
+| `APPLE_PRODUCTIVITY_WRITE_MODE` | `ask` | `ask` or `direct`. `confirm` is accepted as a legacy alias for `ask`. |
 | `APPLE_PRODUCTIVITY_MAX_BODY_CHARS` | `12000` | Maximum body or notes characters returned by read-style tools. |
 | `APPLE_PRODUCTIVITY_RETRIEVAL_CANDIDATE_LIMIT` | `30` | Default Mail retrieval candidate count. |
 | `APPLE_PRODUCTIVITY_CONTEXT_TOP_K` | `5` | Default Mail retrieval snippet count. |

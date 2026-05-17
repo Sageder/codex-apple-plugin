@@ -1,4 +1,4 @@
-export type WriteMode = "draft" | "confirm" | "direct";
+export type WriteMode = "ask" | "direct";
 
 export interface RuntimeConfig {
   writeMode: WriteMode;
@@ -19,11 +19,15 @@ function parsePositiveInt(value: string | undefined, fallback: number): number {
 }
 
 function parseWriteMode(value: string | undefined): WriteMode {
-  if (value === "confirm" || value === "direct" || value === "draft") {
-    return value;
+  if (value === "direct") {
+    return "direct";
   }
 
-  return "draft";
+  if (value === "ask" || value === "confirm") {
+    return "ask";
+  }
+
+  return "ask";
 }
 
 export function getRuntimeConfig(env: NodeJS.ProcessEnv = process.env): RuntimeConfig {

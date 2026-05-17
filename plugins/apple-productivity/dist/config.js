@@ -6,10 +6,13 @@ function parsePositiveInt(value, fallback) {
     return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 function parseWriteMode(value) {
-    if (value === "confirm" || value === "direct" || value === "draft") {
-        return value;
+    if (value === "direct") {
+        return "direct";
     }
-    return "draft";
+    if (value === "ask" || value === "confirm") {
+        return "ask";
+    }
+    return "ask";
 }
 export function getRuntimeConfig(env = process.env) {
     return {
