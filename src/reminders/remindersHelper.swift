@@ -376,9 +376,9 @@ final class ReminderRunner {
         let selectedCalendars = try calendars(matching: input.list)
         let maxScan = input.maxScanPerList ?? 200
         let limit = input.limit ?? 20
-        let reminders = try fetchReminders(in: selectedCalendars, maxPerCalendar: maxScan)
         let query = input.query ?? ""
         let sortMode = input.sort ?? (hasScheduledFilter(input) ? "scheduled" : "relevance")
+        let reminders = try fetchSearchCandidates(in: selectedCalendars, maxPerCalendar: maxScan, sortMode: sortMode, input: input)
         let matched = reminders
             .compactMap { reminder -> (output: ReminderOutput, scheduledDate: Date?)? in
                 guard passesFilters(reminder, input: input) else { return nil }
@@ -793,6 +793,24 @@ final class ReminderRunner {
             .map(String.init)
     }
 
+    private func fetchSearchCandidates(
+        in selectedCalendars: [EKCalendar],
+        maxPerCalendar: Int,
+        sortMode: String,
+        input: SearchInput
+    ) throws -> [EKReminder] {
+        if requiresCompleteScheduledScan(sortMode: sortMode, input: input) {
+            // EventKit does not promise fetch order, so nearest/upcoming searches must
+            // filter and sort the complete selected lists before applying the result limit.
+            return try fetchReminders(in: selectedCalendars)
+        }
+        return try fetchReminders(in: selectedCalendars, maxPerCalendar: maxPerCalendar)
+    }
+
+    private func requiresCompleteScheduledScan(sortMode: String, input: SearchInput) -> Bool {
+        sortMode == "scheduled" || hasScheduledFilter(input)
+    }
+
     private func fetchReminders(in selectedCalendars: [EKCalendar], maxPerCalendar: Int) throws -> [EKReminder] {
         var results: [EKReminder] = []
         for calendar in selectedCalendars {
@@ -984,11 +1002,19 @@ final class ReminderRunner {
     }
 
     private func hasScheduledFilter(_ input: SearchInput) -> Bool {
-        input.scheduled == "scheduled" || hasScheduledRange(input)
+        input.scheduled == "scheduled" || hasAnyDateRange(input)
     }
 
     private func hasScheduledRange(_ input: SearchInput) -> Bool {
         input.scheduledSince != nil || input.scheduledBefore != nil
+    }
+
+    private func hasAnyDateRange(_ input: SearchInput) -> Bool {
+        hasScheduledRange(input)
+            || input.dueSince != nil
+            || input.dueBefore != nil
+            || input.remindSince != nil
+            || input.remindBefore != nil
     }
 
     private func sortScheduledDate(_ reminder: EKReminder, input: SearchInput) -> Date? {
