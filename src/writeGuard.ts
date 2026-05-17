@@ -1,6 +1,6 @@
 import type { RuntimeConfig } from "./config.js";
 
-export type ProductivityWriteAction =
+export type WriteAction =
   | "mail.send"
   | "mail.archive"
   | "mail.delete"
@@ -13,8 +13,6 @@ export type ProductivityWriteAction =
   | "reminders.complete"
   | "reminders.delete"
   | "reminders.move";
-
-export type WriteAction = ProductivityWriteAction | "send" | "archive" | "delete" | "move";
 
 export interface WriteDecision {
   allowed: boolean;
@@ -54,5 +52,5 @@ export function decideWrite(
 }
 
 function actionLabel(action: WriteAction): string {
-  return action.includes(".") ? action : `mail.${action}`;
+  return action;
 }

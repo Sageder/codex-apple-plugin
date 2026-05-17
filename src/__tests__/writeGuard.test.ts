@@ -20,10 +20,4 @@ describe("write guard", () => {
       "reminders.delete dry run requested"
     );
   });
-
-  it("keeps legacy mail action names compatible", () => {
-    const dryRun = decideWrite({ writeMode: "direct" }, "send", false, true);
-    expect(dryRun.allowed).toBe(false);
-    expect(dryRun.reason).toBe("mail.send dry run requested");
-  });
 });

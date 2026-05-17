@@ -7,7 +7,7 @@
       "env": {
         "APPLE_CALENDAR_WRITE_MODE": "ask",
         "APPLE_CALENDAR_MAX_BODY_CHARS": "12000",
-        "APPLE_PRODUCTIVITY_HELPER_TIMEOUT_MS": "60000"
+        "APPLE_CALENDAR_HELPER_TIMEOUT_MS": "60000"
       }
     }
   }

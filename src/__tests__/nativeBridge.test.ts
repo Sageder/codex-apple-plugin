@@ -80,12 +80,15 @@ describe("native helper bridge launch directories", () => {
 
     await expect(
       new SwiftCalendarBridge({
-        helperPath: "/tmp/apple-productivity/helpers/calendar-tool.swift",
+        helperPath: "/tmp/codex-apple-plugin/src/calendar/calendarHelper.swift",
         timeoutMs: 1000
       }).run("search")
     ).resolves.toEqual({ ok: true });
 
-    expect(spawnMock.mock.calls[0][2]).toMatchObject({ cwd: "/tmp/apple-productivity/helpers" });
+    const [command, args, options] = spawnMock.mock.calls[0];
+    expect(command).toBe("/usr/bin/xcrun");
+    expect(args).toEqual(["swift", "/tmp/codex-apple-plugin/src/calendar/calendarHelper.swift", "search"]);
+    expect(options).toMatchObject({ cwd: "/tmp/codex-apple-plugin/src/calendar" });
   });
 
   it("prefers the direct Calendar helper when available from source", async () => {
@@ -107,12 +110,14 @@ describe("native helper bridge launch directories", () => {
 
     await expect(
       new RemindersNativeBridge({
-        helperPath: "/tmp/apple-productivity/dist/reminders/reminders-helper",
+        helperPath: "/tmp/codex-apple-plugin/plugins/apple-reminders/dist/reminders-helper",
         timeoutMs: 1000
       }).run("search")
     ).resolves.toEqual({ ok: true });
 
-    expect(spawnMock.mock.calls[0][2]).toMatchObject({ cwd: "/tmp/apple-productivity/dist/reminders" });
+    expect(spawnMock.mock.calls[0][2]).toMatchObject({
+      cwd: "/tmp/codex-apple-plugin/plugins/apple-reminders/dist"
+    });
   });
 
   it("finds the built Reminders helper when running from source", async () => {

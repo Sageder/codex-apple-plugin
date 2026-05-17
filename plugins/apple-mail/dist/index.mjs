@@ -30971,19 +30971,16 @@ function parseWriteMode(value) {
   return "ask";
 }
 function envValue(env, key, service) {
-  if (!service) {
-    return env[`APPLE_PRODUCTIVITY_${key}`];
-  }
-  return env[`${SERVICE_ENV_PREFIX[service]}_${key}`] ?? env[`APPLE_PRODUCTIVITY_${key}`];
+  return service ? env[`${SERVICE_ENV_PREFIX[service]}_${key}`] : void 0;
 }
 function getRuntimeConfig(env = process.env, service) {
   return {
     writeMode: parseWriteMode(envValue(env, "WRITE_MODE", service)),
     maxBodyChars: parsePositiveInt(envValue(env, "MAX_BODY_CHARS", service), 12e3),
-    retrievalCandidateLimit: parsePositiveInt(env.APPLE_PRODUCTIVITY_RETRIEVAL_CANDIDATE_LIMIT, 30),
-    contextTopK: parsePositiveInt(env.APPLE_PRODUCTIVITY_CONTEXT_TOP_K, 5),
-    helperTimeoutMs: parsePositiveInt(env.APPLE_PRODUCTIVITY_HELPER_TIMEOUT_MS, 6e4),
-    defaultRemindersList: env.APPLE_REMINDERS_DEFAULT_LIST?.trim() || env.APPLE_PRODUCTIVITY_DEFAULT_REMINDERS_LIST?.trim() || void 0
+    retrievalCandidateLimit: parsePositiveInt(envValue(env, "RETRIEVAL_CANDIDATE_LIMIT", "mail"), 30),
+    contextTopK: parsePositiveInt(envValue(env, "CONTEXT_TOP_K", "mail"), 5),
+    helperTimeoutMs: parsePositiveInt(envValue(env, "HELPER_TIMEOUT_MS", service), 6e4),
+    defaultRemindersList: env.APPLE_REMINDERS_DEFAULT_LIST?.trim() || void 0
   };
 }
 
@@ -31011,7 +31008,7 @@ function decideWrite(config3, action, confirm, dryRun) {
   };
 }
 function actionLabel(action) {
-  return action.includes(".") ? action : `mail.${action}`;
+  return action;
 }
 
 // src/mail/handle.ts

@@ -41,7 +41,7 @@ npm run smoke:reminders
 
 `npm run build` compiles the Swift package helper used by Mail and also builds
 `plugins/apple-reminders/dist/reminders-helper` from the Reminders Swift source.
-The Calendar helper is built from `helpers/calendar-tool.swift` into
+The Calendar helper is built from `src/calendar/calendarHelper.swift` into
 `plugins/apple-calendar/dist/calendar-helper`.
 
 ## Repository Layout
@@ -68,8 +68,7 @@ plugins/apple-calendar/
   skills/apple-calendar/SKILL.md
   dist/                          Built Calendar MCP server and helper
 
-src/                             Shared TypeScript MCP services and tests
-helpers/calendar-tool.swift      Calendar EventKit helper source
+src/                             Shared TypeScript MCP services, helper sources, and tests
 scripts/                         Local permission and smoke scripts
 swift/                           Swift package for the Mail helper
 ```

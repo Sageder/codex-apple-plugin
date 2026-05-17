@@ -38,11 +38,7 @@ function parseWriteMode(value: string | undefined): WriteMode {
 }
 
 function envValue(env: NodeJS.ProcessEnv, key: string, service?: AppleServiceName): string | undefined {
-  if (!service) {
-    return env[`APPLE_PRODUCTIVITY_${key}`];
-  }
-
-  return env[`${SERVICE_ENV_PREFIX[service]}_${key}`] ?? env[`APPLE_PRODUCTIVITY_${key}`];
+  return service ? env[`${SERVICE_ENV_PREFIX[service]}_${key}`] : undefined;
 }
 
 export function getRuntimeConfig(
@@ -52,10 +48,9 @@ export function getRuntimeConfig(
   return {
     writeMode: parseWriteMode(envValue(env, "WRITE_MODE", service)),
     maxBodyChars: parsePositiveInt(envValue(env, "MAX_BODY_CHARS", service), 12000),
-    retrievalCandidateLimit: parsePositiveInt(env.APPLE_PRODUCTIVITY_RETRIEVAL_CANDIDATE_LIMIT, 30),
-    contextTopK: parsePositiveInt(env.APPLE_PRODUCTIVITY_CONTEXT_TOP_K, 5),
-    helperTimeoutMs: parsePositiveInt(env.APPLE_PRODUCTIVITY_HELPER_TIMEOUT_MS, 60000),
-    defaultRemindersList:
-      env.APPLE_REMINDERS_DEFAULT_LIST?.trim() || env.APPLE_PRODUCTIVITY_DEFAULT_REMINDERS_LIST?.trim() || undefined
+    retrievalCandidateLimit: parsePositiveInt(envValue(env, "RETRIEVAL_CANDIDATE_LIMIT", "mail"), 30),
+    contextTopK: parsePositiveInt(envValue(env, "CONTEXT_TOP_K", "mail"), 5),
+    helperTimeoutMs: parsePositiveInt(envValue(env, "HELPER_TIMEOUT_MS", service), 60000),
+    defaultRemindersList: env.APPLE_REMINDERS_DEFAULT_LIST?.trim() || undefined
   };
 }

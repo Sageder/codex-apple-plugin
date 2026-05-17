@@ -81,6 +81,14 @@ The other servers are:
 - `plugins/apple-reminders/dist/index.mjs`
 - `plugins/apple-calendar/dist/index.mjs`
 
+To add this repository as a Codex plugin marketplace, use:
+
+- Source: `https://github.com/Sageder/codex-apple-plugin.git`
+- Git ref: `main`
+- Sparse paths: leave empty, or use `.agents/plugins/marketplace.json`,
+  `plugins/apple-mail`, `plugins/apple-reminders`, and
+  `plugins/apple-calendar`
+
 ## Permission Model
 
 Each plugin has a setup tool:
@@ -114,8 +122,6 @@ Writes are controlled per plugin:
 | Apple Reminders | `APPLE_REMINDERS_WRITE_MODE` | `ask` or `direct` |
 | Apple Calendar | `APPLE_CALENDAR_WRITE_MODE` | `ask` or `direct` |
 
-The old shared `APPLE_PRODUCTIVITY_WRITE_MODE` remains a fallback.
-
 In ask mode, mutating tools do not write unless the request includes
 `confirm: true`. Without confirmation they return a preview or target summary
 plus `allowed: false`.
@@ -144,13 +150,12 @@ visible compose window or creates a draft.
 | `APPLE_MAIL_MAX_BODY_CHARS` | `12000` | Maximum Mail body characters returned by read-style tools. |
 | `APPLE_REMINDERS_MAX_BODY_CHARS` | `12000` | Maximum Reminders notes characters returned by read-style tools. |
 | `APPLE_CALENDAR_MAX_BODY_CHARS` | `12000` | Maximum Calendar notes characters returned by read-style tools. |
-| `APPLE_PRODUCTIVITY_RETRIEVAL_CANDIDATE_LIMIT` | `30` | Default Mail retrieval candidate count. |
-| `APPLE_PRODUCTIVITY_CONTEXT_TOP_K` | `5` | Default Mail retrieval snippet count. |
-| `APPLE_PRODUCTIVITY_HELPER_TIMEOUT_MS` | `60000` | Native helper and AppleScript timeout in milliseconds. |
+| `APPLE_MAIL_RETRIEVAL_CANDIDATE_LIMIT` | `30` | Default Mail retrieval candidate count. |
+| `APPLE_MAIL_CONTEXT_TOP_K` | `5` | Default Mail retrieval snippet count. |
+| `APPLE_MAIL_HELPER_TIMEOUT_MS` | `60000` | Mail helper and AppleScript timeout in milliseconds. |
+| `APPLE_REMINDERS_HELPER_TIMEOUT_MS` | `60000` | Reminders helper and AppleScript timeout in milliseconds. |
+| `APPLE_CALENDAR_HELPER_TIMEOUT_MS` | `60000` | Calendar helper and AppleScript timeout in milliseconds. |
 | `APPLE_REMINDERS_DEFAULT_LIST` | unset | Optional default Reminders list name or identifier. |
-
-The old `APPLE_PRODUCTIVITY_MAX_BODY_CHARS` and
-`APPLE_PRODUCTIVITY_DEFAULT_REMINDERS_LIST` remain fallbacks.
 
 ## Tools
 

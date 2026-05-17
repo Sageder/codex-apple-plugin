@@ -24,8 +24,9 @@ function defaultHelperPath(): string {
     resolve(moduleDir, "calendar-helper"),
     resolve(moduleDir, "../../plugins/apple-calendar/dist/calendar-helper"),
     resolve(moduleDir, "../../../plugins/apple-calendar/dist/calendar-helper"),
-    resolve(moduleDir, "../../helpers/calendar-tool.swift"),
-    resolve(moduleDir, "../../../helpers/calendar-tool.swift")
+    resolve(moduleDir, "calendarHelper.swift"),
+    resolve(moduleDir, "../../src/calendar/calendarHelper.swift"),
+    resolve(moduleDir, "../../../src/calendar/calendarHelper.swift")
   ];
   return candidates.find(existsSync) ?? candidates[0];
 }

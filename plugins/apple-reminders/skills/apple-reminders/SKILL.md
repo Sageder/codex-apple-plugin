@@ -30,7 +30,6 @@ tools. Reminders accepts ISO date or datetime strings.
 
 - `APPLE_REMINDERS_WRITE_MODE=ask` is the default. Mutating tools return a preview or target summary unless the call includes `confirm: true`.
 - `APPLE_REMINDERS_WRITE_MODE=direct` means full local write access.
-- The old `APPLE_PRODUCTIVITY_WRITE_MODE` remains a fallback.
 
 ## Privacy
 

@@ -30,7 +30,6 @@ Use this skill when a task should access local Apple Mail.
 
 - `APPLE_MAIL_WRITE_MODE=ask` is the default. Mutating tools return a preview or target summary unless the call includes `confirm: true`.
 - `APPLE_MAIL_WRITE_MODE=direct` means full local write access.
-- The old `APPLE_PRODUCTIVITY_WRITE_MODE` remains a fallback.
 
 ## Privacy
 
