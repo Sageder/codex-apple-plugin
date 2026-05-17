@@ -56,9 +56,9 @@ npm run permissions:request
 ```
 
 `npm run permissions:request` builds the three plugins, runs metadata-only
-AppleScript probes to trigger OS permission prompts, then verifies native access.
-It prints counts/status only, not mail bodies, calendar notes, or reminder
-notes.
+AppleScript probes to trigger OS permission prompts, verifies native access for
+Mail and Reminders, and returns explicit Full Access guidance for Calendar. It
+prints counts/status only, not mail bodies, calendar notes, or reminder notes.
 
 For manual MCP client setup, point the client at the desired bundled server:
 
@@ -89,14 +89,16 @@ Each plugin has a setup tool:
 - `reminders_request_permissions`
 - `calendar_request_permissions`
 
-The setup flow first uses AppleScript for a minimal metadata probe, then runs the
-native implementation's permission/access probe. This is intentionally a
-permission trigger and proof step, not an AppleScript replacement backend.
+The setup flow first uses AppleScript for a minimal metadata probe. Mail and
+Reminders then run native permission/access probes; Calendar returns explicit
+Full Access setup guidance instead of running a native EventKit probe. This is
+intentionally a permission trigger and proof step, not an AppleScript replacement
+backend.
 
 The AppleScript probes only count accounts/mailboxes, reminder lists, or
 calendars. They do not read message bodies, event notes, or reminder notes.
 
-Calendar and Reminders native access are built as direct command-line helpers.
+Calendar and Reminders access are built as direct command-line helpers.
 Calendar setup intentionally does not run a native EventKit probe. After the
 AppleScript permission prompt is accepted, explicitly open System Settings >
 Privacy & Security > Calendars and enable Full Access for Codex or the

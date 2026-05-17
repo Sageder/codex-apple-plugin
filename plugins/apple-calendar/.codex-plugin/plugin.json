@@ -5,10 +5,10 @@
   "author": {
     "name": "Clemens Sageder",
     "email": "local@example.invalid",
-    "url": "https://github.com/"
+    "url": "https://github.com/Sageder"
   },
   "homepage": "https://support.apple.com/calendar",
-  "repository": "https://github.com/",
+  "repository": "https://github.com/Sageder/codex-apple-plugin",
   "license": "MIT",
   "keywords": ["apple-calendar", "calendar", "eventkit", "macos"],
   "skills": "./skills/",
@@ -16,7 +16,7 @@
   "interface": {
     "displayName": "Apple Calendar",
     "shortDescription": "Use Apple Calendar from Codex",
-    "longDescription": "List calendars, search, read, show, create, update, and delete Apple Calendar events through local macOS Calendar and EventKit. Includes a one-time metadata-only AppleScript permission trigger followed by native access verification, plus guarded write behavior.",
+    "longDescription": "List calendars, search, read, show, create, update, and delete Apple Calendar events through local macOS Calendar and EventKit. Includes a one-time metadata-only AppleScript permission trigger, explicit Full Access setup guidance, and guarded write behavior.",
     "developerName": "Clemens Sageder",
     "category": "Productivity",
     "capabilities": ["Interactive", "Read", "Write"],

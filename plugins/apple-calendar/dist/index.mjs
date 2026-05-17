@@ -31630,7 +31630,7 @@ function registerCalendarTools(server2, calendar2) {
     "calendar_create_event",
     {
       title: "Create Apple Calendar event",
-      description: "Create an Apple Calendar.app event when the shared write guard permits it; otherwise return a preview.",
+      description: "Create an Apple Calendar.app event when the Calendar write guard permits it; otherwise return a preview.",
       inputSchema: calendarCreateEventSchema,
       annotations: { readOnlyHint: false, destructiveHint: false }
     },
@@ -31640,7 +31640,7 @@ function registerCalendarTools(server2, calendar2) {
     "calendar_update_event",
     {
       title: "Update Apple Calendar event",
-      description: "Update an Apple Calendar.app event or occurrence when the shared write guard permits it; otherwise return a preview.",
+      description: "Update an Apple Calendar.app event or occurrence when the Calendar write guard permits it; otherwise return a preview.",
       inputSchema: calendarUpdateEventSchema,
       annotations: { readOnlyHint: false, destructiveHint: true }
     },
@@ -31650,7 +31650,7 @@ function registerCalendarTools(server2, calendar2) {
     "calendar_delete_event",
     {
       title: "Delete Apple Calendar event",
-      description: "Delete an Apple Calendar.app event or exclude one occurrence when the shared write guard permits it.",
+      description: "Delete an Apple Calendar.app event or exclude one occurrence when the Calendar write guard permits it.",
       inputSchema: calendarDeleteEventSchema,
       annotations: { readOnlyHint: false, destructiveHint: true }
     },

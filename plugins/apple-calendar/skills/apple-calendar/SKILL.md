@@ -9,7 +9,7 @@ Use this skill when a task should access local Apple Calendar.
 
 ## Fast routing
 
-- First use, a new Mac, or permission failures: `calendar_request_permissions`.
+- First use, a new Mac, or permission failures: `calendar_request_permissions`. If it returns Full Access setup guidance, relay that before using Calendar tools.
 - Calendar availability, next event, or dated event search: `calendar_search_events`, then `calendar_read_event` for the selected handle.
 - Writes: call the mutating tool with `dryRun: true` for a preview, then repeat with `confirm: true` only after the user clearly confirms.
 

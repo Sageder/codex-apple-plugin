@@ -5,10 +5,10 @@
   "author": {
     "name": "Clemens Sageder",
     "email": "local@example.invalid",
-    "url": "https://github.com/"
+    "url": "https://github.com/Sageder"
   },
   "homepage": "https://support.apple.com/guide/reminders",
-  "repository": "https://github.com/",
+  "repository": "https://github.com/Sageder/codex-apple-plugin",
   "license": "MIT",
   "keywords": ["apple-reminders", "reminders", "eventkit", "macos"],
   "skills": "./skills/",
