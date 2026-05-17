@@ -11,6 +11,9 @@ export class RemindersService {
         const lists = await this.backend.run("listLists", args);
         return { lists };
     }
+    async requestAccess() {
+        return this.backend.run("requestAccess");
+    }
     async search(args) {
         const reminders = await this.backend.run("search", args);
         return { reminders };

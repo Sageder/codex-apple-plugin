@@ -12,6 +12,9 @@ export class MailService {
         const accounts = await this.bridge.call("mail.listAccounts");
         return { accounts };
     }
+    async requestPermission() {
+        return this.bridge.call("mail.requestPermission");
+    }
     async listMailboxes() {
         return this.bridge.call("mail.listMailboxes");
     }

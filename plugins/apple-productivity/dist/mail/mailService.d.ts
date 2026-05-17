@@ -51,6 +51,10 @@ export declare class MailService {
     listAccounts(): Promise<{
         accounts: MailAccount[];
     }>;
+    requestPermission(): Promise<{
+        accountCount: number;
+        mailboxCount: number;
+    }>;
     listMailboxes(): Promise<{
         mailboxes: MailboxInfo[];
     }>;

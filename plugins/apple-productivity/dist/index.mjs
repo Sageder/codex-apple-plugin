@@ -31002,6 +31002,9 @@ var CalendarService = class {
     const calendars = await this.runtime.run("listCalendars");
     return { calendars };
   }
+  async requestAccess() {
+    return this.runtime.run("requestAccess");
+  }
   async searchEvents(args) {
     const input = searchInput(args);
     const raw = await this.runtime.run("searchEvents", {
@@ -31510,7 +31513,7 @@ var calendarDeleteEventSchema = external_exports.object({
 var calendarShowEventSchema = calendarReadEventSchema;
 
 // plugins/apple-productivity/src/calendar/tools.ts
-function registerCalendarTools(server2, calendar) {
+function registerCalendarTools(server2, calendar2) {
   server2.registerTool(
     "calendar_list_calendars",
     {
@@ -31518,7 +31521,7 @@ function registerCalendarTools(server2, calendar) {
       description: "List calendars configured in Apple Calendar.app, including identifiers and writable status.",
       annotations: { readOnlyHint: true }
     },
-    async () => safe(() => calendar.listCalendars())
+    async () => safe(() => calendar2.listCalendars())
   );
   server2.registerTool(
     "calendar_search_events",
@@ -31528,7 +31531,7 @@ function registerCalendarTools(server2, calendar) {
       inputSchema: calendarSearchEventsSchema,
       annotations: { readOnlyHint: true }
     },
-    async (args) => safe(() => calendar.searchEvents(args))
+    async (args) => safe(() => calendar2.searchEvents(args))
   );
   server2.registerTool(
     "calendar_read_event",
@@ -31538,7 +31541,7 @@ function registerCalendarTools(server2, calendar) {
       inputSchema: calendarReadEventSchema,
       annotations: { readOnlyHint: true }
     },
-    async (args) => safe(() => calendar.readEvent(args))
+    async (args) => safe(() => calendar2.readEvent(args))
   );
   server2.registerTool(
     "calendar_create_event",
@@ -31548,7 +31551,7 @@ function registerCalendarTools(server2, calendar) {
       inputSchema: calendarCreateEventSchema,
       annotations: { readOnlyHint: false, destructiveHint: false }
     },
-    async (args) => safe(() => calendar.createEvent(args))
+    async (args) => safe(() => calendar2.createEvent(args))
   );
   server2.registerTool(
     "calendar_update_event",
@@ -31558,7 +31561,7 @@ function registerCalendarTools(server2, calendar) {
       inputSchema: calendarUpdateEventSchema,
       annotations: { readOnlyHint: false, destructiveHint: true }
     },
-    async (args) => safe(() => calendar.updateEvent(args))
+    async (args) => safe(() => calendar2.updateEvent(args))
   );
   server2.registerTool(
     "calendar_delete_event",
@@ -31568,7 +31571,7 @@ function registerCalendarTools(server2, calendar) {
       inputSchema: calendarDeleteEventSchema,
       annotations: { readOnlyHint: false, destructiveHint: true }
     },
-    async (args) => safe(() => calendar.deleteEvent(args))
+    async (args) => safe(() => calendar2.deleteEvent(args))
   );
   server2.registerTool(
     "calendar_show_event",
@@ -31578,7 +31581,7 @@ function registerCalendarTools(server2, calendar) {
       inputSchema: calendarShowEventSchema,
       annotations: { readOnlyHint: true }
     },
-    async (args) => safe(() => calendar.showEvent(args))
+    async (args) => safe(() => calendar2.showEvent(args))
   );
 }
 async function safe(callback) {
@@ -31768,6 +31771,9 @@ var MailService = class {
   async listAccounts() {
     const accounts = await this.bridge.call("mail.listAccounts");
     return { accounts };
+  }
+  async requestPermission() {
+    return this.bridge.call("mail.requestPermission");
   }
   async listMailboxes() {
     return this.bridge.call("mail.listMailboxes");
@@ -32010,7 +32016,7 @@ var mailUndoMoveSchema = external_exports.object({
 }).strict();
 
 // plugins/apple-productivity/src/mail/tools.ts
-function registerMailTools(server2, mail) {
+function registerMailTools(server2, mail2) {
   server2.registerTool(
     "mail_list_accounts",
     {
@@ -32018,7 +32024,7 @@ function registerMailTools(server2, mail) {
       description: "List Apple Mail accounts, addresses, and mailbox names configured on this Mac.",
       annotations: { readOnlyHint: true }
     },
-    async () => safe2(() => mail.listAccounts())
+    async () => safe2(() => mail2.listAccounts())
   );
   server2.registerTool(
     "mail_list_mailboxes",
@@ -32027,7 +32033,7 @@ function registerMailTools(server2, mail) {
       description: "List Apple Mail mailboxes with inferred roles such as inbox, sent, archive, trash, junk, and other.",
       annotations: { readOnlyHint: true }
     },
-    async () => safe2(() => mail.listMailboxes())
+    async () => safe2(() => mail2.listMailboxes())
   );
   server2.registerTool(
     "mail_search",
@@ -32037,7 +32043,7 @@ function registerMailTools(server2, mail) {
       inputSchema: mailSearchSchema,
       annotations: { readOnlyHint: true }
     },
-    async (args) => safe2(() => mail.search(args))
+    async (args) => safe2(() => mail2.search(args))
   );
   server2.registerTool(
     "mail_retrieve_context",
@@ -32047,7 +32053,7 @@ function registerMailTools(server2, mail) {
       inputSchema: mailRetrieveContextSchema,
       annotations: { readOnlyHint: true }
     },
-    async (args) => safe2(() => mail.retrieveContext(args))
+    async (args) => safe2(() => mail2.retrieveContext(args))
   );
   server2.registerTool(
     "mail_read",
@@ -32057,7 +32063,7 @@ function registerMailTools(server2, mail) {
       inputSchema: mailReadSchema,
       annotations: { readOnlyHint: true }
     },
-    async (args) => safe2(() => mail.read(args))
+    async (args) => safe2(() => mail2.read(args))
   );
   server2.registerTool(
     "mail_compose",
@@ -32067,7 +32073,7 @@ function registerMailTools(server2, mail) {
       inputSchema: mailComposeSchema,
       annotations: { readOnlyHint: false, destructiveHint: false }
     },
-    async (args) => safe2(() => mail.compose(args))
+    async (args) => safe2(() => mail2.compose(args))
   );
   server2.registerTool(
     "mail_send",
@@ -32077,7 +32083,7 @@ function registerMailTools(server2, mail) {
       inputSchema: mailSendSchema,
       annotations: { readOnlyHint: false, destructiveHint: true }
     },
-    async (args) => safe2(() => mail.send(args))
+    async (args) => safe2(() => mail2.send(args))
   );
   server2.registerTool(
     "mail_move",
@@ -32087,7 +32093,7 @@ function registerMailTools(server2, mail) {
       inputSchema: mailMoveSchema,
       annotations: { readOnlyHint: false, destructiveHint: true }
     },
-    async (args) => safe2(() => mail.move(args))
+    async (args) => safe2(() => mail2.move(args))
   );
   server2.registerTool(
     "mail_undo_move",
@@ -32097,7 +32103,7 @@ function registerMailTools(server2, mail) {
       inputSchema: mailUndoMoveSchema,
       annotations: { readOnlyHint: false, destructiveHint: true }
     },
-    async (args) => safe2(() => mail.undoMove(args))
+    async (args) => safe2(() => mail2.undoMove(args))
   );
   server2.registerTool(
     "mail_archive",
@@ -32107,7 +32113,7 @@ function registerMailTools(server2, mail) {
       inputSchema: mailWriteSchema,
       annotations: { readOnlyHint: false, destructiveHint: true }
     },
-    async (args) => safe2(() => mail.archive(args))
+    async (args) => safe2(() => mail2.archive(args))
   );
   server2.registerTool(
     "mail_delete",
@@ -32117,7 +32123,7 @@ function registerMailTools(server2, mail) {
       inputSchema: mailWriteSchema,
       annotations: { readOnlyHint: false, destructiveHint: true }
     },
-    async (args) => safe2(() => mail.delete(args))
+    async (args) => safe2(() => mail2.delete(args))
   );
   server2.registerTool(
     "mail_junk",
@@ -32127,7 +32133,7 @@ function registerMailTools(server2, mail) {
       inputSchema: mailWriteSchema,
       annotations: { readOnlyHint: false, destructiveHint: true }
     },
-    async (args) => safe2(() => mail.moveToJunk(args))
+    async (args) => safe2(() => mail2.moveToJunk(args))
   );
 }
 async function safe2(callback) {
@@ -32136,6 +32142,120 @@ async function safe2(callback) {
   } catch (error51) {
     return errorResponse(error51);
   }
+}
+
+// plugins/apple-productivity/src/permissions/permissionsService.ts
+var ALL_SERVICES = ["mail", "calendar", "reminders"];
+var PermissionsService = class {
+  constructor(services) {
+    this.services = services;
+  }
+  services;
+  async request(args = {}) {
+    const serviceNames = args.services ?? ALL_SERVICES;
+    const results = [];
+    for (const serviceName of serviceNames) {
+      results.push(await this.requestOne(serviceName));
+    }
+    return {
+      ok: results.every((result) => result.ok),
+      results,
+      note: "This only triggers macOS permission prompts and verifies basic access. It does not read mail bodies, calendar notes, or reminder notes."
+    };
+  }
+  async requestOne(service) {
+    try {
+      switch (service) {
+        case "mail":
+          return this.mailResult(await this.services.mail.requestPermission());
+        case "calendar":
+          return this.calendarResult(await this.services.calendar.requestAccess());
+        case "reminders":
+          return this.remindersResult(await this.services.reminders.requestAccess());
+      }
+    } catch (error51) {
+      return {
+        service,
+        ok: false,
+        action: actionFor(service),
+        error: error51 instanceof Error ? error51.message : String(error51),
+        nextStep: nextStepFor(service)
+      };
+    }
+  }
+  mailResult(result) {
+    return {
+      service: "mail",
+      ok: true,
+      action: "mail.requestPermission",
+      summary: {
+        accounts: result.accountCount,
+        mailboxes: result.mailboxCount
+      }
+    };
+  }
+  calendarResult(result) {
+    return {
+      service: "calendar",
+      ok: true,
+      action: "requestAccess",
+      summary: {
+        authorizationStatus: result.authorizationStatus
+      }
+    };
+  }
+  remindersResult(result) {
+    return {
+      service: "reminders",
+      ok: true,
+      action: "requestAccess",
+      summary: {
+        authorizationStatus: result.authorizationStatus
+      }
+    };
+  }
+};
+function actionFor(service) {
+  if (service === "mail") {
+    return "mail.requestPermission";
+  }
+  return "requestAccess";
+}
+function nextStepFor(service) {
+  switch (service) {
+    case "mail":
+      return "Approve the macOS Automation prompt for Mail, or enable it in System Settings > Privacy & Security > Automation.";
+    case "calendar":
+      return "Approve the macOS Calendar prompt, or enable it in System Settings > Privacy & Security > Calendars.";
+    case "reminders":
+      return "Approve the macOS Reminders prompt, or enable it in System Settings > Privacy & Security > Reminders.";
+  }
+}
+
+// plugins/apple-productivity/src/permissions/schemas.ts
+var permissionServiceSchema = external_exports.enum(["mail", "calendar", "reminders"]);
+var requestPermissionsSchema = external_exports.object({
+  services: external_exports.array(permissionServiceSchema).min(1).max(3).optional().describe("Apple app permission prompts to trigger. Defaults to Mail, Calendar, and Reminders.")
+}).strict();
+
+// plugins/apple-productivity/src/permissions/tools.ts
+function registerPermissionTools(server2, permissions) {
+  server2.registerTool(
+    "apple_productivity_request_permissions",
+    {
+      title: "Request Apple Productivity permissions",
+      description: "First-run setup tool that triggers macOS permission prompts for Apple Mail Automation, Calendar, and Reminders. Run this when Apple Productivity is newly installed or a user reports permission failures.",
+      inputSchema: requestPermissionsSchema,
+      annotations: { readOnlyHint: true, destructiveHint: false }
+    },
+    async (args) => {
+      try {
+        return jsonResponse(await permissions.request(args));
+      } catch (error51) {
+        return errorResponse(error51);
+      }
+    }
+  );
 }
 
 // plugins/apple-productivity/src/reminders/handle.ts
@@ -32167,16 +32287,19 @@ var RemindersService = class {
     const lists = await this.backend.run("listLists", args);
     return { lists };
   }
+  async requestAccess() {
+    return this.backend.run("requestAccess");
+  }
   async search(args) {
-    const reminders = await this.backend.run("search", args);
-    return { reminders };
+    const reminders2 = await this.backend.run("search", args);
+    return { reminders: reminders2 };
   }
   async read(args) {
-    const reminders = await this.backend.run("read", {
+    const reminders2 = await this.backend.run("read", {
       ...args,
       maxBodyChars: args.maxBodyChars ?? this.config.maxBodyChars
     });
-    return { reminders };
+    return { reminders: reminders2 };
   }
   async create(args) {
     const decision = decideWrite(this.config, "reminders.create", args.confirm, args.dryRun);
@@ -32380,7 +32503,7 @@ var remindersMoveSchema = external_exports.object({
 }).strict();
 
 // plugins/apple-productivity/src/reminders/tools.ts
-function registerRemindersTools(server2, reminders) {
+function registerRemindersTools(server2, reminders2) {
   server2.registerTool(
     "reminders_list_lists",
     {
@@ -32389,7 +32512,7 @@ function registerRemindersTools(server2, reminders) {
       inputSchema: remindersListListsSchema,
       annotations: { readOnlyHint: true }
     },
-    async (args) => safe3(() => reminders.listLists(args))
+    async (args) => safe3(() => reminders2.listLists(args))
   );
   server2.registerTool(
     "reminders_search",
@@ -32399,7 +32522,7 @@ function registerRemindersTools(server2, reminders) {
       inputSchema: remindersSearchSchema,
       annotations: { readOnlyHint: true }
     },
-    async (args) => safe3(() => reminders.search(args))
+    async (args) => safe3(() => reminders2.search(args))
   );
   server2.registerTool(
     "reminders_read",
@@ -32409,7 +32532,7 @@ function registerRemindersTools(server2, reminders) {
       inputSchema: remindersReadSchema,
       annotations: { readOnlyHint: true }
     },
-    async (args) => safe3(() => reminders.read(args))
+    async (args) => safe3(() => reminders2.read(args))
   );
   server2.registerTool(
     "reminders_create",
@@ -32419,7 +32542,7 @@ function registerRemindersTools(server2, reminders) {
       inputSchema: remindersCreateSchema,
       annotations: { readOnlyHint: false, destructiveHint: false }
     },
-    async (args) => safe3(() => reminders.create(args))
+    async (args) => safe3(() => reminders2.create(args))
   );
   server2.registerTool(
     "reminders_update",
@@ -32429,7 +32552,7 @@ function registerRemindersTools(server2, reminders) {
       inputSchema: remindersUpdateSchema,
       annotations: { readOnlyHint: false, destructiveHint: false }
     },
-    async (args) => safe3(() => reminders.update(args))
+    async (args) => safe3(() => reminders2.update(args))
   );
   server2.registerTool(
     "reminders_complete",
@@ -32439,7 +32562,7 @@ function registerRemindersTools(server2, reminders) {
       inputSchema: remindersCompleteSchema,
       annotations: { readOnlyHint: false, destructiveHint: false }
     },
-    async (args) => safe3(() => reminders.complete(args))
+    async (args) => safe3(() => reminders2.complete(args))
   );
   server2.registerTool(
     "reminders_delete",
@@ -32449,7 +32572,7 @@ function registerRemindersTools(server2, reminders) {
       inputSchema: remindersWriteSchema,
       annotations: { readOnlyHint: false, destructiveHint: true }
     },
-    async (args) => safe3(() => reminders.delete(args))
+    async (args) => safe3(() => reminders2.delete(args))
   );
   server2.registerTool(
     "reminders_move",
@@ -32459,7 +32582,7 @@ function registerRemindersTools(server2, reminders) {
       inputSchema: remindersMoveSchema,
       annotations: { readOnlyHint: false, destructiveHint: false }
     },
-    async (args) => safe3(() => reminders.move(args))
+    async (args) => safe3(() => reminders2.move(args))
   );
 }
 async function safe3(callback) {
@@ -32477,7 +32600,11 @@ var server = new McpServer({
   name: "apple-productivity",
   version: "0.1.0"
 });
-registerMailTools(server, new MailService(bridge, config2));
-registerCalendarTools(server, new CalendarService(new SwiftCalendarBridge({ timeoutMs: config2.helperTimeoutMs }), config2));
-registerRemindersTools(server, new RemindersService(new RemindersNativeBridge({ timeoutMs: config2.helperTimeoutMs }), config2));
+var mail = new MailService(bridge, config2);
+var calendar = new CalendarService(new SwiftCalendarBridge({ timeoutMs: config2.helperTimeoutMs }), config2);
+var reminders = new RemindersService(new RemindersNativeBridge({ timeoutMs: config2.helperTimeoutMs }), config2);
+registerPermissionTools(server, new PermissionsService({ mail, calendar, reminders }));
+registerMailTools(server, mail);
+registerCalendarTools(server, calendar);
+registerRemindersTools(server, reminders);
 await server.connect(new StdioServerTransport());

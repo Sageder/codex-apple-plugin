@@ -11,6 +11,9 @@ export class CalendarService {
         const calendars = await this.runtime.run("listCalendars");
         return { calendars };
     }
+    async requestAccess() {
+        return this.runtime.run("requestAccess");
+    }
     async searchEvents(args) {
         const input = searchInput(args);
         const raw = await this.runtime.run("searchEvents", {

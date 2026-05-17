@@ -57,6 +57,14 @@ function body(): ReminderBody {
 }
 
 describe("reminders service", () => {
+  it("forwards explicit access requests to Swift", async () => {
+    const backend = new MockBackend([{ authorizationStatus: "fullAccess" }]);
+    const result = await service(backend).requestAccess();
+
+    expect(backend.calls[0]).toEqual({ action: "requestAccess", input: undefined });
+    expect(result).toEqual({ authorizationStatus: "fullAccess" });
+  });
+
   it("forwards searches and wraps Swift results for MCP responses", async () => {
     const backend = new MockBackend([[summary()]]);
     const result = await service(backend).search({

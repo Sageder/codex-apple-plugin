@@ -14,6 +14,7 @@ access use Swift/EventKit helpers.
 ## Fast routing
 
 - Exact mail lookup or newest/latest email: `mail_search`, then `mail_read` only if the user needs body/details.
+- First use, a new Mac, or permission failures: `apple_productivity_request_permissions`.
 - Broad mail context such as "what matters about X": `mail_retrieve_context`.
 - Calendar availability, next event, or dated event search: `calendar_search_events`, then `calendar_read_event` for the selected handle.
 - Reminder lookup, nearest reminder, or scheduled reminders: `reminders_search`, then `reminders_read` if body/details matter.
@@ -28,6 +29,7 @@ date or datetime strings.
 Newest email:
 
 ```js
+apple_productivity_request_permissions()
 mail_search({ "scope": "inbox", "limit": 1 })
 mail_read({ "handles": ["<handle from search>"], "maxBodyChars": 2000 })
 ```

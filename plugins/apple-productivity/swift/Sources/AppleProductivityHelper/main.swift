@@ -204,6 +204,17 @@ final class MailClient {
     }
   }
 
+  func requestPermission() -> [String: Any] {
+    let accounts = accounts()
+    let mailboxCount = accounts.reduce(0) { count, account in
+      count + mailboxes(account).count
+    }
+    return [
+      "accountCount": accounts.count,
+      "mailboxCount": mailboxCount
+    ]
+  }
+
   func listMailboxes() -> [String: Any] {
     var rows: [[String: Any]] = []
     for account in accounts() {
@@ -641,6 +652,8 @@ do {
   let mail = try MailClient()
 
   switch command {
+  case "mail.requestPermission":
+    try writeJSON(mail.requestPermission())
   case "mail.listAccounts":
     try writeJSON(mail.listAccounts())
   case "mail.listMailboxes":

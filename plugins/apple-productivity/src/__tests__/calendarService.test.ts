@@ -36,6 +36,16 @@ const handle = encodeCalendarEventHandle({
 });
 
 describe("calendar service write policy", () => {
+  it("forwards explicit access requests to the helper", async () => {
+    const bridge = new FakeBridge({ authorizationStatus: "fullAccess" });
+    const service = new CalendarService(bridge, baseConfig);
+
+    const result = await service.requestAccess();
+
+    expect(result).toEqual({ authorizationStatus: "fullAccess" });
+    expect(bridge.calls).toEqual([{ action: "requestAccess", input: undefined }]);
+  });
+
   it("previews create events in ask mode without calling the helper", async () => {
     const bridge = new FakeBridge();
     const service = new CalendarService(bridge, baseConfig);

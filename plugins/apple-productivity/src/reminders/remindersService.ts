@@ -89,6 +89,10 @@ export class RemindersService {
     return { lists };
   }
 
+  async requestAccess(): Promise<{ authorizationStatus: string }> {
+    return this.backend.run<{ authorizationStatus: string }>("requestAccess");
+  }
+
   async search(args: RemindersSearchArgs): Promise<{ reminders: ReminderSummary[] }> {
     const reminders = await this.backend.run<ReminderSummary[]>("search", args);
     return { reminders };

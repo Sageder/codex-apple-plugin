@@ -22,7 +22,7 @@
   "interface": {
     "displayName": "Apple Productivity",
     "shortDescription": "Use Apple Mail, Calendar, and Reminders from Codex",
-    "longDescription": "Use local macOS Apple apps from Codex, including Apple Mail account discovery, live search, RAG-style context retrieval, reading, composing, sending, archiving, and moving messages to trash; Swift/EventKit-backed Apple Calendar list, search, read, create, update, delete, and show workflows; and Swift/EventKit-backed Apple Reminders list discovery, search, reading, creating, updating, completing, deleting, and moving reminders with guarded write behavior.",
+    "longDescription": "Use local macOS Apple apps from Codex, including first-run permission setup, Apple Mail account discovery, live search, RAG-style context retrieval, reading, composing, sending, archiving, and moving messages to trash; Swift/EventKit-backed Apple Calendar list, search, read, create, update, delete, and show workflows; and Swift/EventKit-backed Apple Reminders list discovery, search, reading, creating, updating, completing, deleting, and moving reminders with guarded write behavior.",
     "developerName": "Clemens Sageder",
     "category": "Productivity",
     "capabilities": [
@@ -34,9 +34,9 @@
     "privacyPolicyURL": "https://www.apple.com/legal/privacy/",
     "termsOfServiceURL": "https://www.apple.com/legal/internet-services/terms/site.html",
     "defaultPrompt": [
+      "Set up Apple app permissions",
       "Find useful context from my Apple Mail",
-      "Draft a reply in Apple Mail",
-      "Create a calendar event"
+      "Draft a reply in Apple Mail"
     ],
     "brandColor": "#0A84FF",
     "composerIcon": "./assets/apple-productivity.svg",

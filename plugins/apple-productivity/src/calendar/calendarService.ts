@@ -64,6 +64,10 @@ export class CalendarService {
     return { calendars };
   }
 
+  async requestAccess(): Promise<{ authorizationStatus: string }> {
+    return this.runtime.run<{ authorizationStatus: string }>("requestAccess");
+  }
+
   async searchEvents(args: CalendarSearchArgs): Promise<{ events: CalendarEventSummary[] }> {
     const input = searchInput(args);
     const raw = await this.runtime.run<RawCalendarEventSummary[]>("searchEvents", {

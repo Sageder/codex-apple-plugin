@@ -74,6 +74,9 @@ export declare class RemindersService {
     listLists(args?: RemindersListListsArgs): Promise<{
         lists: ReminderList[];
     }>;
+    requestAccess(): Promise<{
+        authorizationStatus: string;
+    }>;
     search(args: RemindersSearchArgs): Promise<{
         reminders: ReminderSummary[];
     }>;

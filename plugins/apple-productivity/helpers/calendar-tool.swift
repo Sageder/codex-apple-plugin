@@ -131,6 +131,20 @@ func ensureAccess(_ store: EKEventStore) throws {
   }
 }
 
+func authorizationStatusName() -> String {
+  let status = EKEventStore.authorizationStatus(for: .event)
+  if status == .notDetermined { return "notDetermined" }
+  if status == .restricted { return "restricted" }
+  if status == .denied { return "denied" }
+  if #available(macOS 14.0, *) {
+    if status == .fullAccess { return "fullAccess" }
+    if status == .writeOnly { return "writeOnly" }
+  } else if status == .authorized {
+    return "authorized"
+  }
+  return "unknown"
+}
+
 func colorHex(_ calendar: EKCalendar) -> String? {
   guard let color = calendar.cgColor?.converted(
     to: CGColorSpace(name: CGColorSpace.sRGB)!,
@@ -750,6 +764,8 @@ do {
   try ensureAccess(store)
 
   switch action {
+  case "requestAccess":
+    try emit(["authorizationStatus": authorizationStatusName()])
   case "listCalendars":
     try listCalendars(store: store)
   case "searchEvents":

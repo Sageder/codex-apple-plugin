@@ -75,6 +75,10 @@ export class MailService {
     return { accounts };
   }
 
+  async requestPermission(): Promise<{ accountCount: number; mailboxCount: number }> {
+    return this.bridge.call<{ accountCount: number; mailboxCount: number }>("mail.requestPermission");
+  }
+
   async listMailboxes(): Promise<{ mailboxes: MailboxInfo[] }> {
     return this.bridge.call<{ mailboxes: MailboxInfo[] }>("mail.listMailboxes");
   }

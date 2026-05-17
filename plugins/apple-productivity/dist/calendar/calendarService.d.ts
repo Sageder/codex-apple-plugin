@@ -41,6 +41,9 @@ export declare class CalendarService {
     listCalendars(): Promise<{
         calendars: CalendarInfo[];
     }>;
+    requestAccess(): Promise<{
+        authorizationStatus: string;
+    }>;
     searchEvents(args: CalendarSearchArgs): Promise<{
         events: CalendarEventSummary[];
     }>;

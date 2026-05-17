@@ -10,6 +10,7 @@
     "build:reminders-helper": "mkdir -p plugins/apple-productivity/dist/reminders && xcrun swiftc -framework EventKit plugins/apple-productivity/src/reminders/remindersHelper.swift -o plugins/apple-productivity/dist/reminders/reminders-helper",
     "test": "vitest run",
     "check": "npm run build && npm run test",
+    "permissions:request": "npm run build && tsx plugins/apple-productivity/scripts/request-permissions.ts",
     "smoke:mail": "tsx plugins/apple-productivity/scripts/smoke-mail.ts",
     "smoke:calendar": "tsx plugins/apple-productivity/scripts/smoke-calendar.ts",
     "smoke:reminders": "tsx plugins/apple-productivity/scripts/smoke-reminders.ts"

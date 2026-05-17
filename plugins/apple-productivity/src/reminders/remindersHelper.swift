@@ -339,6 +339,9 @@ final class ReminderRunner {
             return try deleteData(try decoder.decode(DeleteInput.self, from: data))
         case "move":
             return try moveData(try decoder.decode(MoveInput.self, from: data))
+        case "requestAccess":
+            try ensureFullAccess()
+            return try encode(["authorizationStatus": authorizationStatusName()])
         case "status":
             return try encode(["authorizationStatus": authorizationStatusName()])
         default:
