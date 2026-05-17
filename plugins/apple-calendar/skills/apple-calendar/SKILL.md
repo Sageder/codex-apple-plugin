@@ -26,6 +26,44 @@ Use this skill when a task should access local Apple Calendar.
 For relative dates, compute the actual window before calling tools. Calendar
 search timestamps should be UTC ISO strings ending in `Z`.
 
+## Examples
+
+Find the next event by searching a concrete UTC window, then read the selected event:
+
+```text
+calendar_search_events({"from":"2026-05-17T16:00:00Z","to":"2026-06-16T16:00:00Z","limit":5})
+calendar_read_event({"handle":"<handle-from-search>"})
+```
+
+Search for a meeting on a specific day:
+
+```text
+calendar_search_events({"query":"research chat","from":"2026-05-18T00:00:00Z","to":"2026-05-19T00:00:00Z","limit":10})
+```
+
+Create an event with the write guard:
+
+```text
+calendar_list_calendars()
+calendar_create_event({"calendarId":"<calendar-id-from-list>","summary":"Focus block","start":"2026-05-20T08:00:00Z","end":"2026-05-20T09:00:00Z","dryRun":true})
+calendar_create_event({"calendarId":"<calendar-id-from-list>","summary":"Focus block","start":"2026-05-20T08:00:00Z","end":"2026-05-20T09:00:00Z","confirm":true})
+```
+
+Update or delete a recurring event occurrence:
+
+```text
+calendar_update_event({"handle":"<handle>","span":"this","patch":{"summary":"Updated title"},"dryRun":true})
+calendar_update_event({"handle":"<handle>","span":"this","patch":{"summary":"Updated title"},"confirm":true})
+calendar_delete_event({"handle":"<handle>","span":"this","dryRun":true})
+calendar_delete_event({"handle":"<handle>","span":"this","confirm":true})
+```
+
+Open an event in Calendar.app:
+
+```text
+calendar_show_event({"handle":"<handle>"})
+```
+
 ## Access mode
 
 - `APPLE_CALENDAR_WRITE_MODE=ask` is the default. Mutating tools return a preview or target summary unless the call includes `confirm: true`.

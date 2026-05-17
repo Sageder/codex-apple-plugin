@@ -28,6 +28,45 @@ Use this skill when a task should access local Apple Reminders.
 For relative dates, compute the actual current local ISO datetime before calling
 tools. Reminders accepts ISO date or datetime strings.
 
+## Examples
+
+Find the next scheduled incomplete reminder:
+
+```text
+reminders_search({"completed":"incomplete","scheduled":"scheduled","scheduledSince":"2026-05-17T19:10:00+02:00","sort":"scheduled","limit":5})
+```
+
+Find overdue reminders by due date:
+
+```text
+reminders_search({"completed":"incomplete","dueBefore":"2026-05-17T19:10:00+02:00","sort":"scheduled","limit":10})
+```
+
+Search reminder titles/notes/list names:
+
+```text
+reminders_search({"query":"rent","completed":"all","limit":10})
+reminders_read({"handles":["<handle-from-search>"],"maxBodyChars":1000})
+```
+
+Create a reminder with the write guard:
+
+```text
+reminders_create({"name":"Pay rent","dueDate":"2026-05-26T23:00:00+02:00","remindMeDate":"2026-05-26T23:00:00+02:00","dryRun":true})
+reminders_create({"name":"Pay rent","dueDate":"2026-05-26T23:00:00+02:00","remindMeDate":"2026-05-26T23:00:00+02:00","confirm":true})
+```
+
+Complete, move, or delete a selected reminder:
+
+```text
+reminders_complete({"handles":["<handle>"],"dryRun":true})
+reminders_complete({"handles":["<handle>"],"confirm":true})
+reminders_move({"handles":["<handle>"],"list":"Tasks","dryRun":true})
+reminders_move({"handles":["<handle>"],"list":"Tasks","confirm":true})
+reminders_delete({"handles":["<handle>"],"dryRun":true})
+reminders_delete({"handles":["<handle>"],"confirm":true})
+```
+
 ## Access mode
 
 - `APPLE_REMINDERS_WRITE_MODE=ask` is the default. Mutating tools return a preview or target summary unless the call includes `confirm: true`.

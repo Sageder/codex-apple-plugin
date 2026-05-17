@@ -26,6 +26,48 @@ Use this skill when a task should access local Apple Mail.
 - Treat delete as moving messages to Trash/Deleted Items, not permanent deletion.
 - Keep undo tokens returned by move/archive/delete/junk actions if the user may want to reverse the move.
 
+## Examples
+
+Newest email metadata, then a tight body read only if needed:
+
+```text
+mail_search({"scope":"inbox","limit":1})
+mail_read({"handles":["<handle-from-search>"],"maxBodyChars":1200})
+```
+
+Find messages the user sent to someone:
+
+```text
+mail_search({"scope":"sent","recipient":"person@example.com","limit":10})
+```
+
+Retrieve broad context for a topic without dumping full threads:
+
+```text
+mail_retrieve_context({"scope":"all","query":"Princeton exchange","topK":5,"maxBodyChars":2000})
+```
+
+Create a visible draft:
+
+```text
+mail_compose({"to":["person@example.com"],"subject":"Follow up","body":"Hi ...","visible":true})
+```
+
+Preview, then send only after confirmation:
+
+```text
+mail_send({"to":["person@example.com"],"subject":"Follow up","body":"Hi ...","dryRun":true})
+mail_send({"to":["person@example.com"],"subject":"Follow up","body":"Hi ...","confirm":true})
+```
+
+Guarded archive/delete/move pattern:
+
+```text
+mail_archive({"handles":["<handle>"],"dryRun":true})
+mail_archive({"handles":["<handle>"],"confirm":true})
+mail_undo_move({"undoTokens":["<undo-token>"],"confirm":true})
+```
+
 ## Access mode
 
 - `APPLE_MAIL_WRITE_MODE=ask` is the default. Mutating tools return a preview or target summary unless the call includes `confirm: true`.
