@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { appBundlePathForExecutable, runAppBundleHelper } from "../appBundleRunner.js";
 
 export class RemindersNativeBridgeError extends Error {
   constructor(
@@ -30,6 +31,10 @@ export class RemindersNativeBridge implements RemindersBackend {
   }
 
   run<T>(action: string, input: unknown = {}): Promise<T> {
+    if (appBundlePathForExecutable(this.helperPath)) {
+      return this.runAppBundle<T>(action, input);
+    }
+
     return new Promise((resolve, reject) => {
       const child = spawn(this.helperPath, [action], {
         cwd: dirname(this.helperPath),
@@ -89,12 +94,14 @@ export class RemindersNativeBridge implements RemindersBackend {
         }
 
         try {
-          resolve(JSON.parse(trimmed) as T);
+          resolve(parseRemindersOutput<T>(trimmed));
         } catch (error) {
           reject(
-            new RemindersNativeBridgeError(
-              `Reminders helper returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`
-            )
+            error instanceof RemindersNativeBridgeError
+              ? error
+              : new RemindersNativeBridgeError(
+                  `Reminders helper returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`
+                )
           );
         }
       });
@@ -102,13 +109,44 @@ export class RemindersNativeBridge implements RemindersBackend {
       child.stdin.end(JSON.stringify(input));
     });
   }
+
+  private async runAppBundle<T>(action: string, input: unknown): Promise<T> {
+    const stdout = await runAppBundleHelper({
+      executablePath: this.helperPath,
+      action,
+      input,
+      timeoutMs: this.options.timeoutMs,
+      createError: (message, stderr) => new RemindersNativeBridgeError(message, stderr)
+    });
+
+    return parseRemindersOutput<T>(stdout);
+  }
+}
+
+function parseRemindersOutput<T>(stdout: string): T {
+  const trimmed = stdout.trim();
+  if (!trimmed) {
+    return undefined as T;
+  }
+
+  try {
+    return JSON.parse(trimmed) as T;
+  } catch (error) {
+    throw new RemindersNativeBridgeError(
+      `Reminders helper returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
 }
 
 function defaultHelperPath(): string {
   const moduleDir = dirname(fileURLToPath(import.meta.url));
   const candidates = [
+    join(moduleDir, "RemindersHelper.app", "Contents", "MacOS", "reminders-helper"),
+    join(moduleDir, "reminders", "RemindersHelper.app", "Contents", "MacOS", "reminders-helper"),
+    join(moduleDir, "../../dist/reminders/RemindersHelper.app/Contents/MacOS/reminders-helper"),
     join(moduleDir, "reminders-helper"),
-    join(moduleDir, "reminders", "reminders-helper")
+    join(moduleDir, "reminders", "reminders-helper"),
+    join(moduleDir, "../../dist/reminders/reminders-helper")
   ];
   return candidates.find(existsSync) ?? candidates[0];
 }

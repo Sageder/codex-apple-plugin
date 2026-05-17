@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { appBundlePathForExecutable, runAppBundleHelper } from "../appBundleRunner.js";
 
 export class SwiftCalendarBridgeError extends Error {
   constructor(
@@ -21,6 +22,12 @@ export interface SwiftCalendarBridgeOptions {
 function defaultHelperPath(): string {
   const moduleDir = dirname(fileURLToPath(import.meta.url));
   const candidates = [
+    resolve(moduleDir, "CalendarHelper.app/Contents/MacOS/calendar-helper"),
+    resolve(moduleDir, "calendar/CalendarHelper.app/Contents/MacOS/calendar-helper"),
+    resolve(moduleDir, "../../dist/calendar/CalendarHelper.app/Contents/MacOS/calendar-helper"),
+    resolve(moduleDir, "calendar-helper"),
+    resolve(moduleDir, "calendar", "calendar-helper"),
+    resolve(moduleDir, "../../dist/calendar/calendar-helper"),
     resolve(moduleDir, "../../helpers/calendar-tool.swift"),
     resolve(moduleDir, "../helpers/calendar-tool.swift")
   ];
@@ -52,8 +59,21 @@ export class SwiftCalendarBridge {
   }
 
   private runRaw(action: string, input: unknown): Promise<string> {
+    if (appBundlePathForExecutable(this.helperPath)) {
+      return runAppBundleHelper({
+        executablePath: this.helperPath,
+        action,
+        input,
+        timeoutMs: this.options.timeoutMs,
+        createError: (message, stderr) => new SwiftCalendarBridgeError(message, stderr)
+      });
+    }
+
     return new Promise((resolve, reject) => {
-      const child = spawn("/usr/bin/xcrun", ["swift", this.helperPath, action], {
+      const isSwiftScript = this.helperPath.endsWith(".swift");
+      const command = isSwiftScript ? "/usr/bin/xcrun" : this.helperPath;
+      const args = isSwiftScript ? ["swift", this.helperPath, action] : [action];
+      const child = spawn(command, args, {
         cwd: dirname(this.helperPath),
         stdio: ["pipe", "pipe", "pipe"]
       });

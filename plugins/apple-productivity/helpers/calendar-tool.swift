@@ -25,8 +25,17 @@ let isoPlain: ISO8601DateFormatter = {
   return formatter
 }()
 
+var helperInputFilePath: String?
+var helperOutputFilePath: String?
+var helperErrorFilePath: String?
+
 func readInput() throws -> [String: Any] {
-  let data = FileHandle.standardInput.readDataToEndOfFile()
+  let data: Data
+  if let helperInputFilePath {
+    data = try Data(contentsOf: URL(fileURLWithPath: helperInputFilePath))
+  } else {
+    data = FileHandle.standardInput.readDataToEndOfFile()
+  }
   if data.isEmpty {
     return [:]
   }
@@ -40,8 +49,52 @@ func readInput() throws -> [String: Any] {
 
 func emit(_ value: Any) throws {
   let data = try JSONSerialization.data(withJSONObject: value, options: [])
-  FileHandle.standardOutput.write(data)
-  FileHandle.standardOutput.write(Data("\n".utf8))
+  if let helperOutputFilePath {
+    try data.write(to: URL(fileURLWithPath: helperOutputFilePath))
+  } else {
+    FileHandle.standardOutput.write(data)
+    FileHandle.standardOutput.write(Data("\n".utf8))
+  }
+}
+
+func parseInvocation() throws -> String {
+  let arguments = Array(CommandLine.arguments.dropFirst())
+  guard let action = arguments.first else {
+    throw HelperError.message("Missing action")
+  }
+
+  var index = 1
+  while index < arguments.count {
+    let flag = arguments[index]
+    guard index + 1 < arguments.count else {
+      throw HelperError.message("Missing value for \(flag)")
+    }
+
+    let value = arguments[index + 1]
+    switch flag {
+    case "--input-file":
+      helperInputFilePath = value
+    case "--output-file":
+      helperOutputFilePath = value
+    case "--error-file":
+      helperErrorFilePath = value
+    default:
+      throw HelperError.message("Unknown argument: \(flag)")
+    }
+    index += 2
+  }
+
+  return action
+}
+
+func fail(_ error: Error) -> Never {
+  let data = Data((String(describing: error) + "\n").utf8)
+  if let helperErrorFilePath {
+    try? data.write(to: URL(fileURLWithPath: helperErrorFilePath))
+  } else {
+    FileHandle.standardError.write(data)
+  }
+  exit(1)
 }
 
 func iso(_ date: Date?) -> String? {
@@ -754,13 +807,15 @@ func showEvent(store: EKEventStore, input: [String: Any]) throws {
 }
 
 do {
-  guard CommandLine.arguments.count >= 2 else {
-    throw HelperError.message("Missing action")
-  }
-
-  let action = CommandLine.arguments[1]
+  let action = try parseInvocation()
   let input = try readInput()
   let store = EKEventStore()
+
+  if action == "status" {
+    try emit(["authorizationStatus": authorizationStatusName()])
+    exit(0)
+  }
+
   try ensureAccess(store)
 
   switch action {
@@ -784,7 +839,5 @@ do {
     throw HelperError.message("Unknown action: \(action)")
   }
 } catch {
-  FileHandle.standardError.write(Data(String(describing: error).utf8))
-  FileHandle.standardError.write(Data("\n".utf8))
-  exit(1)
+  fail(error)
 }

@@ -9,6 +9,14 @@ struct ErrorOutput: Codable {
     let error: String
 }
 
+var helperErrorFilePath: String?
+
+struct Invocation {
+    let action: String
+    let inputFilePath: String?
+    let outputFilePath: String?
+}
+
 struct ReminderHandle: Codable {
     let listId: String
     let listName: String
@@ -1134,6 +1142,53 @@ final class ReminderRunner {
     }
 }
 
+func parseInvocation() throws -> Invocation {
+    let arguments = Array(CommandLine.arguments.dropFirst())
+    guard let action = arguments.first else {
+        throw HelperFailure(description: "Missing Reminders helper action")
+    }
+
+    var inputFilePath: String?
+    var outputFilePath: String?
+    var index = 1
+    while index < arguments.count {
+        let flag = arguments[index]
+        guard index + 1 < arguments.count else {
+            throw HelperFailure(description: "Missing value for \(flag)")
+        }
+
+        let value = arguments[index + 1]
+        switch flag {
+        case "--input-file":
+            inputFilePath = value
+        case "--output-file":
+            outputFilePath = value
+        case "--error-file":
+            helperErrorFilePath = value
+        default:
+            throw HelperFailure(description: "Unknown argument: \(flag)")
+        }
+        index += 2
+    }
+
+    return Invocation(action: action, inputFilePath: inputFilePath, outputFilePath: outputFilePath)
+}
+
+func readInput(_ inputFilePath: String?) throws -> Data {
+    if let inputFilePath {
+        return try Data(contentsOf: URL(fileURLWithPath: inputFilePath))
+    }
+    return FileHandle.standardInput.readDataToEndOfFile()
+}
+
+func writeOutput(_ output: Data, to outputFilePath: String?) throws {
+    if let outputFilePath {
+        try output.write(to: URL(fileURLWithPath: outputFilePath))
+    } else {
+        FileHandle.standardOutput.write(output)
+    }
+}
+
 func fail(_ error: Error) -> Never {
     let message: String
     if let failure = error as? HelperFailure {
@@ -1142,22 +1197,22 @@ func fail(_ error: Error) -> Never {
         message = error.localizedDescription
     }
     if let payload = try? JSONEncoder().encode(ErrorOutput(error: message)) {
-        FileHandle.standardError.write(payload)
+        if let helperErrorFilePath {
+            try? payload.write(to: URL(fileURLWithPath: helperErrorFilePath))
+        } else {
+            FileHandle.standardError.write(payload)
+        }
     } else {
         FileHandle.standardError.write(Data("Reminders helper failed".utf8))
     }
     exit(1)
 }
 
-let action = CommandLine.arguments.dropFirst().first
-guard let action else {
-    fail(HelperFailure(description: "Missing Reminders helper action"))
-}
-
 do {
-    let input = FileHandle.standardInput.readDataToEndOfFile()
-    let output = try ReminderRunner().run(action: action, data: input.isEmpty ? Data("{}".utf8) : input)
-    FileHandle.standardOutput.write(output)
+    let invocation = try parseInvocation()
+    let input = try readInput(invocation.inputFilePath)
+    let output = try ReminderRunner().run(action: invocation.action, data: input.isEmpty ? Data("{}".utf8) : input)
+    try writeOutput(output, to: invocation.outputFilePath)
 } catch {
     fail(error)
 }

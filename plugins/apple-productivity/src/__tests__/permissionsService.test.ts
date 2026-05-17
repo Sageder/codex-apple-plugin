@@ -66,6 +66,37 @@ describe("permissions service", () => {
     expect(result.results[2]).toMatchObject({ service: "reminders", ok: true });
   });
 
+  it("includes helper stderr in permission failures", async () => {
+    const failure = Object.assign(new Error("Swift calendar helper exited with code 1"), {
+      stderr: "Calendar access was not granted\n"
+    });
+    const service = new PermissionsService({
+      mail: {
+        async requestPermission() {
+          return { accountCount: 0, mailboxCount: 0 };
+        }
+      },
+      calendar: {
+        async requestAccess() {
+          throw failure;
+        }
+      },
+      reminders: {
+        async requestAccess() {
+          return { authorizationStatus: "fullAccess" };
+        }
+      }
+    });
+
+    const result = await service.request({ services: ["calendar"] });
+
+    expect(result.results[0]).toMatchObject({
+      service: "calendar",
+      ok: false,
+      error: "Swift calendar helper exited with code 1: Calendar access was not granted"
+    });
+  });
+
   it("can request a selected subset", async () => {
     const calls: string[] = [];
     const service = new PermissionsService({

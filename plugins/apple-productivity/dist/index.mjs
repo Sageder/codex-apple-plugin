@@ -31152,10 +31152,144 @@ function previewPatch(patch) {
 }
 
 // plugins/apple-productivity/src/calendar/swiftCalendarBridge.ts
-import { spawn } from "node:child_process";
+import { spawn as spawn2 } from "node:child_process";
 import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
+// plugins/apple-productivity/src/appBundleRunner.ts
+import { spawn } from "node:child_process";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { homedir, tmpdir } from "node:os";
+import { join } from "node:path";
+function appBundlePathForExecutable(executablePath) {
+  const marker = ".app/Contents/MacOS/";
+  const index = executablePath.indexOf(marker);
+  if (index === -1) {
+    return void 0;
+  }
+  return executablePath.slice(0, index + ".app".length);
+}
+function helperContainerTmpDir(bundleId) {
+  if (!bundleId) {
+    return tmpdir();
+  }
+  return join(homedir(), "Library", "Containers", bundleId, "Data", "tmp");
+}
+async function runAppBundleHelper(options) {
+  const appPath = appBundlePathForExecutable(options.executablePath);
+  if (!appPath) {
+    throw options.createError(`Helper path is not inside an app bundle: ${options.executablePath}`);
+  }
+  const tempRoot = helperContainerTmpDir(bundleIdForAppPath(appPath));
+  await mkdir(tempRoot, { recursive: true });
+  const tempDir = await mkdtemp(join(tempRoot, "apple-productivity-helper-"));
+  const inputPath = join(tempDir, "input.json");
+  const outputPath = join(tempDir, "output.json");
+  const errorPath = join(tempDir, "error.json");
+  try {
+    await writeFile(inputPath, JSON.stringify(options.input), "utf8");
+    return await openAppBundle({
+      ...options,
+      appPath,
+      inputPath,
+      outputPath,
+      errorPath
+    });
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
+}
+function bundleIdForAppPath(appPath) {
+  if (appPath.endsWith("/CalendarHelper.app")) {
+    return "com.local.codex.apple-productivity.calendar-helper";
+  }
+  if (appPath.endsWith("/RemindersHelper.app")) {
+    return "com.local.codex.apple-productivity.reminders-helper";
+  }
+  return void 0;
+}
+function openAppBundle(options) {
+  return new Promise((resolve3, reject) => {
+    const child = spawn(
+      "/usr/bin/open",
+      [
+        "-W",
+        "-n",
+        options.appPath,
+        "--args",
+        options.action,
+        "--input-file",
+        options.inputPath,
+        "--output-file",
+        options.outputPath,
+        "--error-file",
+        options.errorPath
+      ],
+      {
+        stdio: ["ignore", "pipe", "pipe"]
+      }
+    );
+    let stdout = "";
+    let stderr = "";
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      child.kill("SIGTERM");
+      reject(options.createError(`App helper timed out after ${options.timeoutMs}ms`));
+    }, options.timeoutMs);
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk;
+    });
+    child.on("error", (error51) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timer);
+      reject(options.createError(`Failed to launch app helper: ${error51.message}`));
+    });
+    child.on("close", (code) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timer);
+      void finishAppBundleRun(options, code, stdout, stderr).then(resolve3, reject);
+    });
+  });
+}
+async function finishAppBundleRun(options, code, stdout, stderr) {
+  const helperError = await readOptionalFile(options.errorPath);
+  if (helperError.trim()) {
+    throw options.createError(`App helper exited with an error`, helperError.trim().slice(0, 2e3));
+  }
+  if (code !== 0) {
+    throw options.createError(`App helper launcher exited with code ${code}`, stderr.trim().slice(0, 2e3));
+  }
+  const output = await readOptionalFile(options.outputPath);
+  return output.trim() ? output : stdout;
+}
+async function readOptionalFile(path) {
+  try {
+    return await readFile(path, "utf8");
+  } catch (error51) {
+    if (typeof error51 === "object" && error51 !== null && "code" in error51 && error51.code === "ENOENT") {
+      return "";
+    }
+    throw error51;
+  }
+}
+
+// plugins/apple-productivity/src/calendar/swiftCalendarBridge.ts
 var SwiftCalendarBridgeError = class extends Error {
   constructor(message, stderr) {
     super(message);
@@ -31167,6 +31301,12 @@ var SwiftCalendarBridgeError = class extends Error {
 function defaultHelperPath() {
   const moduleDir = dirname(fileURLToPath(import.meta.url));
   const candidates = [
+    resolve(moduleDir, "CalendarHelper.app/Contents/MacOS/calendar-helper"),
+    resolve(moduleDir, "calendar/CalendarHelper.app/Contents/MacOS/calendar-helper"),
+    resolve(moduleDir, "../../dist/calendar/CalendarHelper.app/Contents/MacOS/calendar-helper"),
+    resolve(moduleDir, "calendar-helper"),
+    resolve(moduleDir, "calendar", "calendar-helper"),
+    resolve(moduleDir, "../../dist/calendar/calendar-helper"),
     resolve(moduleDir, "../../helpers/calendar-tool.swift"),
     resolve(moduleDir, "../helpers/calendar-tool.swift")
   ];
@@ -31194,8 +31334,20 @@ var SwiftCalendarBridge = class {
     }
   }
   runRaw(action, input) {
+    if (appBundlePathForExecutable(this.helperPath)) {
+      return runAppBundleHelper({
+        executablePath: this.helperPath,
+        action,
+        input,
+        timeoutMs: this.options.timeoutMs,
+        createError: (message, stderr) => new SwiftCalendarBridgeError(message, stderr)
+      });
+    }
     return new Promise((resolve3, reject) => {
-      const child = spawn("/usr/bin/xcrun", ["swift", this.helperPath, action], {
+      const isSwiftScript = this.helperPath.endsWith(".swift");
+      const command = isSwiftScript ? "/usr/bin/xcrun" : this.helperPath;
+      const args = isSwiftScript ? ["swift", this.helperPath, action] : [action];
+      const child = spawn2(command, args, {
         cwd: dirname(this.helperPath),
         stdio: ["pipe", "pipe", "pipe"]
       });
@@ -31244,9 +31396,9 @@ var SwiftCalendarBridge = class {
 };
 
 // plugins/apple-productivity/src/reminders/nativeBridge.ts
-import { spawn as spawn2 } from "node:child_process";
+import { spawn as spawn3 } from "node:child_process";
 import { existsSync as existsSync2 } from "node:fs";
-import { dirname as dirname2, join } from "node:path";
+import { dirname as dirname2, join as join2 } from "node:path";
 import { fileURLToPath as fileURLToPath2 } from "node:url";
 var RemindersNativeBridgeError = class extends Error {
   constructor(message, stderr) {
@@ -31264,8 +31416,11 @@ var RemindersNativeBridge = class {
   options;
   helperPath;
   run(action, input = {}) {
+    if (appBundlePathForExecutable(this.helperPath)) {
+      return this.runAppBundle(action, input);
+    }
     return new Promise((resolve3, reject) => {
-      const child = spawn2(this.helperPath, [action], {
+      const child = spawn3(this.helperPath, [action], {
         cwd: dirname2(this.helperPath),
         stdio: ["pipe", "pipe", "pipe"]
       });
@@ -31312,10 +31467,10 @@ var RemindersNativeBridge = class {
           return;
         }
         try {
-          resolve3(JSON.parse(trimmed));
+          resolve3(parseRemindersOutput(trimmed));
         } catch (error51) {
           reject(
-            new RemindersNativeBridgeError(
+            error51 instanceof RemindersNativeBridgeError ? error51 : new RemindersNativeBridgeError(
               `Reminders helper returned invalid JSON: ${error51 instanceof Error ? error51.message : String(error51)}`
             )
           );
@@ -31324,18 +31479,45 @@ var RemindersNativeBridge = class {
       child.stdin.end(JSON.stringify(input));
     });
   }
+  async runAppBundle(action, input) {
+    const stdout = await runAppBundleHelper({
+      executablePath: this.helperPath,
+      action,
+      input,
+      timeoutMs: this.options.timeoutMs,
+      createError: (message, stderr) => new RemindersNativeBridgeError(message, stderr)
+    });
+    return parseRemindersOutput(stdout);
+  }
 };
+function parseRemindersOutput(stdout) {
+  const trimmed = stdout.trim();
+  if (!trimmed) {
+    return void 0;
+  }
+  try {
+    return JSON.parse(trimmed);
+  } catch (error51) {
+    throw new RemindersNativeBridgeError(
+      `Reminders helper returned invalid JSON: ${error51 instanceof Error ? error51.message : String(error51)}`
+    );
+  }
+}
 function defaultHelperPath2() {
   const moduleDir = dirname2(fileURLToPath2(import.meta.url));
   const candidates = [
-    join(moduleDir, "reminders-helper"),
-    join(moduleDir, "reminders", "reminders-helper")
+    join2(moduleDir, "RemindersHelper.app", "Contents", "MacOS", "reminders-helper"),
+    join2(moduleDir, "reminders", "RemindersHelper.app", "Contents", "MacOS", "reminders-helper"),
+    join2(moduleDir, "../../dist/reminders/RemindersHelper.app/Contents/MacOS/reminders-helper"),
+    join2(moduleDir, "reminders-helper"),
+    join2(moduleDir, "reminders", "reminders-helper"),
+    join2(moduleDir, "../../dist/reminders/reminders-helper")
   ];
   return candidates.find(existsSync2) ?? candidates[0];
 }
 
 // plugins/apple-productivity/src/swiftBridge.ts
-import { spawn as spawn3 } from "node:child_process";
+import { spawn as spawn4 } from "node:child_process";
 import { existsSync as existsSync3 } from "node:fs";
 import { dirname as dirname3, resolve as resolve2 } from "node:path";
 import { fileURLToPath as fileURLToPath3 } from "node:url";
@@ -31374,7 +31556,7 @@ var SwiftBridge = class {
       const builtHelper = resolve2(swiftDir, ".build", "debug", "apple-productivity-helper");
       const command = existsSync3(builtHelper) ? builtHelper : "swift";
       const args = existsSync3(builtHelper) ? [] : ["run", "--package-path", swiftDir, "apple-productivity-helper"];
-      const child = spawn3(command, args, {
+      const child = spawn4(command, args, {
         cwd: swiftDir,
         stdio: ["pipe", "pipe", "pipe"]
       });
@@ -32178,7 +32360,7 @@ var PermissionsService = class {
         service,
         ok: false,
         action: actionFor(service),
-        error: error51 instanceof Error ? error51.message : String(error51),
+        error: formatError2(error51),
         nextStep: nextStepFor(service)
       };
     }
@@ -32220,6 +32402,16 @@ function actionFor(service) {
     return "mail.requestPermission";
   }
   return "requestAccess";
+}
+function formatError2(error51) {
+  const message = error51 instanceof Error ? error51.message : String(error51);
+  if (typeof error51 === "object" && error51 !== null && "stderr" in error51 && typeof error51.stderr === "string") {
+    const detail = error51.stderr.trim();
+    if (detail) {
+      return `${message}: ${detail.slice(0, 1e3)}`;
+    }
+  }
+  return message;
 }
 function nextStepFor(service) {
   switch (service) {

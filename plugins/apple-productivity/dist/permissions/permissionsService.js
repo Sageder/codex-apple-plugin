@@ -32,7 +32,7 @@ export class PermissionsService {
                 service,
                 ok: false,
                 action: actionFor(service),
-                error: error instanceof Error ? error.message : String(error),
+                error: formatError(error),
                 nextStep: nextStepFor(service)
             };
         }
@@ -74,6 +74,16 @@ function actionFor(service) {
         return "mail.requestPermission";
     }
     return "requestAccess";
+}
+function formatError(error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (typeof error === "object" && error !== null && "stderr" in error && typeof error.stderr === "string") {
+        const detail = error.stderr.trim();
+        if (detail) {
+            return `${message}: ${detail.slice(0, 1000)}`;
+        }
+    }
+    return message;
 }
 function nextStepFor(service) {
     switch (service) {

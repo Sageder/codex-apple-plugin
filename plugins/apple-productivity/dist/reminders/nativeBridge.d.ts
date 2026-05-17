@@ -14,4 +14,5 @@ export declare class RemindersNativeBridge implements RemindersBackend {
     private readonly helperPath;
     constructor(options: RemindersNativeBridgeOptions);
     run<T>(action: string, input?: unknown): Promise<T>;
+    private runAppBundle;
 }
