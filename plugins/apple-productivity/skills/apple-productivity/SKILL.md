@@ -1,6 +1,6 @@
 ---
 name: apple-productivity
-description: Use Apple Mail, Apple Calendar, and Apple Reminders from Codex through the local Apple Productivity MCP plugin. Trigger when the user asks to search, read, summarize, draft, send, archive, or delete Apple Mail messages; list/search/read/create/update/delete/show Apple Calendar events; or list/search/read/create/update/complete/delete/move Apple Reminders.
+description: Use Apple Mail, Apple Calendar, and Apple Reminders from Codex through the local Apple Productivity MCP plugin. Trigger for mailbox questions, message search/read/context retrieval, drafting or sending mail, mail archive/delete/move, calendar lookup/read/create/update/delete/show, reminder list/search/read/create/update/complete/delete/move, and relative-date requests like newest email, next event, or nearest reminder.
 ---
 
 # Apple Productivity
@@ -10,6 +10,87 @@ Apple Calendar, or Apple Reminders.
 
 Mail uses a Swift ScriptingBridge/Apple Events helper. Calendar and Reminders
 access use Swift/EventKit helpers.
+
+## Fast routing
+
+- Exact mail lookup or newest/latest email: `mail_search`, then `mail_read` only if the user needs body/details.
+- Broad mail context such as "what matters about X": `mail_retrieve_context`.
+- Calendar availability, next event, or dated event search: `calendar_search_events`, then `calendar_read_event` for the selected handle.
+- Reminder lookup, nearest reminder, or scheduled reminders: `reminders_search`, then `reminders_read` if body/details matter.
+- Writes: call the mutating tool with `dryRun: true` for a preview, then repeat with `confirm: true` only after the user clearly confirms.
+
+For relative dates, compute the actual window before calling tools. Calendar
+search timestamps should be UTC ISO strings ending in `Z`; Reminders accepts ISO
+date or datetime strings.
+
+## Common examples
+
+Newest email:
+
+```js
+mail_search({ "scope": "inbox", "limit": 1 })
+mail_read({ "handles": ["<handle from search>"], "maxBodyChars": 2000 })
+```
+
+Mail from or to a person:
+
+```js
+mail_search({ "scope": "inbox", "sender": "alice@example.com", "limit": 10 })
+mail_search({ "scope": "sent", "recipient": "alice@example.com", "limit": 10 })
+```
+
+Broad mailbox context:
+
+```js
+mail_retrieve_context({
+  "query": "project name or topic",
+  "scope": "all",
+  "topK": 5,
+  "maxBodyChars": 4000
+})
+```
+
+Next calendar events:
+
+```js
+calendar_search_events({
+  "from": "2026-05-17T12:00:00Z",
+  "to": "2026-05-24T12:00:00Z",
+  "limit": 10
+})
+calendar_read_event({ "handle": "<handle from search>" })
+```
+
+Nearest scheduled reminder:
+
+```js
+reminders_search({
+  "scheduled": "scheduled",
+  "scheduledSince": "2026-05-17T14:00:00+02:00",
+  "sort": "scheduled",
+  "limit": 5
+})
+```
+
+Create or change something safely:
+
+```js
+calendar_list_calendars()
+calendar_create_event({
+  "calendarName": "<calendar name from list>",
+  "summary": "Meeting",
+  "start": "2026-05-18T13:00:00Z",
+  "end": "2026-05-18T13:30:00Z",
+  "dryRun": true
+})
+calendar_create_event({
+  "calendarName": "<calendar name from list>",
+  "summary": "Meeting",
+  "start": "2026-05-18T13:00:00Z",
+  "end": "2026-05-18T13:30:00Z",
+  "confirm": true
+})
+```
 
 ## Mail workflow
 
