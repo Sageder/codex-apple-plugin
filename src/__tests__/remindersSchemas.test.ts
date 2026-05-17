@@ -7,7 +7,7 @@ import {
 } from "../reminders/schemas.js";
 
 describe("reminder schemas", () => {
-  it("defaults searches to incomplete reminders with bounded scans", () => {
+  it("defaults relevance-style searches to incomplete reminders with bounded scans", () => {
     expect(remindersSearchSchema.parse({})).toMatchObject({
       completed: "incomplete",
       limit: 20,

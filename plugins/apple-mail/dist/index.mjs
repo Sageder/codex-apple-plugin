@@ -32007,16 +32007,30 @@ var remindersSearchSchema = external_exports.object({
   list: external_exports.string().optional().describe("Reminder list name or identifier."),
   completed: external_exports.enum(["all", "completed", "incomplete"]).optional().default("incomplete"),
   scheduled: external_exports.enum(["all", "scheduled", "unscheduled"]).optional().describe("Filter by whether the reminder has either a due date or reminder alarm."),
-  scheduledSince: optionalDateString.describe("Match reminders whose dueDate or remindMeDate is on or after this date."),
-  scheduledBefore: optionalDateString.describe("Match reminders whose dueDate or remindMeDate is on or before this date."),
-  dueSince: optionalDateString,
-  dueBefore: optionalDateString,
-  remindSince: optionalDateString,
-  remindBefore: optionalDateString,
+  scheduledSince: optionalDateString.describe(
+    "Match reminders whose dueDate or remindMeDate is on or after this date. Date-range searches scan complete selected lists before applying limit."
+  ),
+  scheduledBefore: optionalDateString.describe(
+    "Match reminders whose dueDate or remindMeDate is on or before this date. Date-range searches scan complete selected lists before applying limit."
+  ),
+  dueSince: optionalDateString.describe(
+    "Match reminders whose dueDate is on or after this date. Date-range searches scan complete selected lists before applying limit."
+  ),
+  dueBefore: optionalDateString.describe(
+    "Match reminders whose dueDate is on or before this date. Date-range searches scan complete selected lists before applying limit."
+  ),
+  remindSince: optionalDateString.describe(
+    "Match reminders whose remindMeDate is on or after this date. Date-range searches scan complete selected lists before applying limit."
+  ),
+  remindBefore: optionalDateString.describe(
+    "Match reminders whose remindMeDate is on or before this date. Date-range searches scan complete selected lists before applying limit."
+  ),
   priority: reminderPrioritySchema.optional(),
-  sort: external_exports.enum(["relevance", "scheduled"]).optional().describe("Use scheduled for nearest/upcoming reminders; sorts by the nearest matching dueDate or remindMeDate."),
+  sort: external_exports.enum(["relevance", "scheduled"]).optional().describe(
+    "Use scheduled for nearest/upcoming reminders; scans complete selected lists and sorts by the nearest matching dueDate or remindMeDate."
+  ),
   limit: external_exports.number().int().positive().max(100).optional().default(20),
-  maxScanPerList: external_exports.number().int().positive().max(2e3).optional().default(200)
+  maxScanPerList: external_exports.number().int().positive().max(2e3).optional().default(200).describe("Caps relevance scans only; scheduled/date-range searches scan complete selected lists before limiting.")
 }).strict();
 var remindersReadSchema = external_exports.object({
   handles: external_exports.array(external_exports.string()).min(1).max(50),

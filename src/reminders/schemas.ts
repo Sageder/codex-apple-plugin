@@ -30,19 +30,40 @@ export const remindersSearchSchema = z
       .enum(["all", "scheduled", "unscheduled"])
       .optional()
       .describe("Filter by whether the reminder has either a due date or reminder alarm."),
-    scheduledSince: optionalDateString.describe("Match reminders whose dueDate or remindMeDate is on or after this date."),
-    scheduledBefore: optionalDateString.describe("Match reminders whose dueDate or remindMeDate is on or before this date."),
-    dueSince: optionalDateString,
-    dueBefore: optionalDateString,
-    remindSince: optionalDateString,
-    remindBefore: optionalDateString,
+    scheduledSince: optionalDateString.describe(
+      "Match reminders whose dueDate or remindMeDate is on or after this date. Date-range searches scan complete selected lists before applying limit."
+    ),
+    scheduledBefore: optionalDateString.describe(
+      "Match reminders whose dueDate or remindMeDate is on or before this date. Date-range searches scan complete selected lists before applying limit."
+    ),
+    dueSince: optionalDateString.describe(
+      "Match reminders whose dueDate is on or after this date. Date-range searches scan complete selected lists before applying limit."
+    ),
+    dueBefore: optionalDateString.describe(
+      "Match reminders whose dueDate is on or before this date. Date-range searches scan complete selected lists before applying limit."
+    ),
+    remindSince: optionalDateString.describe(
+      "Match reminders whose remindMeDate is on or after this date. Date-range searches scan complete selected lists before applying limit."
+    ),
+    remindBefore: optionalDateString.describe(
+      "Match reminders whose remindMeDate is on or before this date. Date-range searches scan complete selected lists before applying limit."
+    ),
     priority: reminderPrioritySchema.optional(),
     sort: z
       .enum(["relevance", "scheduled"])
       .optional()
-      .describe("Use scheduled for nearest/upcoming reminders; sorts by the nearest matching dueDate or remindMeDate."),
+      .describe(
+        "Use scheduled for nearest/upcoming reminders; scans complete selected lists and sorts by the nearest matching dueDate or remindMeDate."
+      ),
     limit: z.number().int().positive().max(100).optional().default(20),
-    maxScanPerList: z.number().int().positive().max(2000).optional().default(200)
+    maxScanPerList: z
+      .number()
+      .int()
+      .positive()
+      .max(2000)
+      .optional()
+      .default(200)
+      .describe("Caps relevance scans only; scheduled/date-range searches scan complete selected lists before limiting.")
   })
   .strict();
 

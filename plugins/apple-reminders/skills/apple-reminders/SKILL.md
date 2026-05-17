@@ -17,7 +17,9 @@ Use this skill when a task should access local Apple Reminders.
 
 - Use `reminders_list_lists` when the user asks what lists are available or when a target list is ambiguous.
 - Use `reminders_search` for reminder candidates and handles.
-- For "nearest reminder", "next reminder", and other upcoming scheduled-reminder requests, use `reminders_search` with `scheduled: "scheduled"`, `scheduledSince` set to the current local ISO datetime, `sort: "scheduled"`, and a small `limit`.
+- For "nearest reminder", "next reminder", and other upcoming scheduled-reminder requests, use `reminders_search` with `completed: "incomplete"`, `scheduled: "scheduled"`, `scheduledSince` set to the current local ISO datetime, `sort: "scheduled"`, and a small `limit`.
+- Do not infer "no upcoming reminders" from a broad incomplete-only search. Scheduled/date-range searches scan the complete selected lists before applying `limit`, because EventKit fetch order is not chronological; `maxScanPerList` is only a relevance-scan performance cap and should not be used as a correctness boundary for nearest/upcoming lookups.
+- For due-only or reminder-alarm-only questions, use `dueSince`/`dueBefore` or `remindSince`/`remindBefore` directly. Those date-range searches also scan complete selected lists before limiting.
 - Use `reminders_read` only for selected reminders and keep body limits tight.
 - Use `reminders_create`, `reminders_update`, `reminders_complete`, `reminders_delete`, and `reminders_move` only when the configured write guard allows it.
 - Treat `reminders_delete` as real reminder deletion, not a move-to-trash workflow.

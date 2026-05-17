@@ -16,7 +16,7 @@
   "interface": {
     "displayName": "Apple Reminders",
     "shortDescription": "Use Apple Reminders from Codex",
-    "longDescription": "List reminder lists, search, read, create, update, complete, delete, and move Apple Reminders through local macOS Reminders and EventKit. Includes a one-time metadata-only AppleScript permission trigger followed by native access verification, plus guarded write behavior.",
+    "longDescription": "List reminder lists, search, read, create, update, complete, delete, and move Apple Reminders through local macOS Reminders and EventKit. Supports reliable nearest/upcoming reminder lookup by scanning complete selected lists for scheduled/date-range searches before limiting results, because EventKit fetch order is not chronological. Includes a one-time metadata-only AppleScript permission trigger followed by native access verification, plus guarded write behavior.",
     "developerName": "Clemens Sageder",
     "category": "Productivity",
     "capabilities": ["Interactive", "Read", "Write"],

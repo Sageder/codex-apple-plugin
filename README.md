@@ -187,6 +187,14 @@ visible compose window or creates a draft.
 - `reminders_delete`
 - `reminders_move`
 
+For nearest, next, or upcoming reminder requests, call `reminders_search` with
+`completed: "incomplete"`, `scheduled: "scheduled"`, `scheduledSince` set to the
+current local ISO datetime, `sort: "scheduled"`, and a small `limit`. Scheduled
+and date-range searches scan the complete selected lists before applying
+`limit`, because EventKit fetch order is not chronological; `maxScanPerList`
+only caps relevance-style scans and should not be used to decide that no
+upcoming reminder exists.
+
 ### Calendar
 
 - `calendar_request_permissions`
