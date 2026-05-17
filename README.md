@@ -60,14 +60,6 @@ AppleScript probes to trigger OS permission prompts, then verifies native access
 It prints counts/status only, not mail bodies, calendar notes, or reminder
 notes.
 
-To load the plugins in Codex, use the bundled marketplace entry at
-[`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json). It
-points Codex at:
-
-- [`plugins/apple-mail`](plugins/apple-mail)
-- [`plugins/apple-reminders`](plugins/apple-reminders)
-- [`plugins/apple-calendar`](plugins/apple-calendar)
-
 For manual MCP client setup, point the client at the desired bundled server:
 
 ```json
