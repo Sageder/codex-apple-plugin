@@ -45,9 +45,19 @@ git clone <repo-url>
 cd codex-apple-plugin
 npm install
 npm run build
+npm run permissions:request
 ```
 
-Then point your MCP client at the built server:
+`npm run permissions:request` rebuilds the helpers, triggers the macOS Mail,
+Calendar, and Reminders permission prompts, and verifies basic access without
+printing mail bodies, calendar notes, or reminder notes.
+
+To load it as a Codex plugin, use the bundled marketplace entry at
+[`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json), which
+points Codex at [`plugins/apple-productivity`](plugins/apple-productivity). The
+plugin includes its manifest, skill, assets, and MCP server config.
+
+For manual MCP client setup, point the client at the bundled server:
 
 ```json
 {
@@ -55,7 +65,7 @@ Then point your MCP client at the built server:
     "apple-productivity": {
       "command": "node",
       "args": [
-        "/absolute/path/to/codex-apple-plugin/plugins/apple-productivity/dist/index.js"
+        "/absolute/path/to/codex-apple-plugin/plugins/apple-productivity/dist/index.mjs"
       ],
       "env": {
         "APPLE_PRODUCTIVITY_WRITE_MODE": "ask",
