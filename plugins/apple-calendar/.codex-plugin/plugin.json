@@ -1,0 +1,36 @@
+{
+  "name": "apple-calendar",
+  "version": "0.2.0",
+  "description": "Access Apple Calendar from Codex on macOS.",
+  "author": {
+    "name": "Clemens Sageder",
+    "email": "local@example.invalid",
+    "url": "https://github.com/"
+  },
+  "homepage": "https://support.apple.com/calendar",
+  "repository": "https://github.com/",
+  "license": "MIT",
+  "keywords": ["apple-calendar", "calendar", "eventkit", "macos"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Apple Calendar",
+    "shortDescription": "Use Apple Calendar from Codex",
+    "longDescription": "List calendars, search, read, show, create, update, and delete Apple Calendar events through local macOS Calendar and EventKit. Includes a one-time metadata-only AppleScript permission trigger followed by native access verification, plus guarded write behavior.",
+    "developerName": "Clemens Sageder",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "websiteURL": "https://support.apple.com/calendar",
+    "privacyPolicyURL": "https://www.apple.com/legal/privacy/",
+    "termsOfServiceURL": "https://www.apple.com/legal/internet-services/terms/site.html",
+    "defaultPrompt": [
+      "Find my next event",
+      "Search my calendar",
+      "Create a calendar event"
+    ],
+    "brandColor": "#FF3B30",
+    "composerIcon": "./assets/apple-calendar.png",
+    "logo": "./assets/apple-calendar.png",
+    "screenshots": []
+  }
+}

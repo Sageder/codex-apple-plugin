@@ -2,8 +2,7 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    include: ["plugins/apple-productivity/src/**/*.test.ts"],
+    include: ["src/**/*.test.ts"],
     environment: "node"
   }
 });
-

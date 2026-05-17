@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "apple-reminders": {
+      "command": "node",
+      "cwd": ".",
+      "args": ["./dist/index.mjs"],
+      "env": {
+        "APPLE_REMINDERS_WRITE_MODE": "ask",
+        "APPLE_REMINDERS_MAX_BODY_CHARS": "12000",
+        "APPLE_REMINDERS_DEFAULT_LIST": "",
+        "APPLE_PRODUCTIVITY_HELPER_TIMEOUT_MS": "60000"
+      }
+    }
+  }
+}

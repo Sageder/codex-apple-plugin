@@ -1,0 +1,36 @@
+{
+  "name": "apple-mail",
+  "version": "0.2.0",
+  "description": "Access Apple Mail from Codex on macOS.",
+  "author": {
+    "name": "Clemens Sageder",
+    "email": "local@example.invalid",
+    "url": "https://github.com/"
+  },
+  "homepage": "https://support.apple.com/mail",
+  "repository": "https://github.com/",
+  "license": "MIT",
+  "keywords": ["apple-mail", "mail", "macos", "email"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Apple Mail",
+    "shortDescription": "Use Apple Mail from Codex",
+    "longDescription": "Search, read, retrieve context from, compose, send, archive, move, junk, and delete-to-trash Apple Mail messages through local macOS Apple Mail. Includes a one-time metadata-only AppleScript permission trigger followed by native access verification, plus guarded write behavior.",
+    "developerName": "Clemens Sageder",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "websiteURL": "https://support.apple.com/mail",
+    "privacyPolicyURL": "https://www.apple.com/legal/privacy/",
+    "termsOfServiceURL": "https://www.apple.com/legal/internet-services/terms/site.html",
+    "defaultPrompt": [
+      "Find my newest email",
+      "Search Apple Mail for context",
+      "Draft a reply in Apple Mail"
+    ],
+    "brandColor": "#0A84FF",
+    "composerIcon": "./assets/apple-mail.png",
+    "logo": "./assets/apple-mail.png",
+    "screenshots": []
+  }
+}

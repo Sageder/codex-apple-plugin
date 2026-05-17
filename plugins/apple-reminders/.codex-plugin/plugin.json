@@ -1,0 +1,36 @@
+{
+  "name": "apple-reminders",
+  "version": "0.2.0",
+  "description": "Access Apple Reminders from Codex on macOS.",
+  "author": {
+    "name": "Clemens Sageder",
+    "email": "local@example.invalid",
+    "url": "https://github.com/"
+  },
+  "homepage": "https://support.apple.com/guide/reminders",
+  "repository": "https://github.com/",
+  "license": "MIT",
+  "keywords": ["apple-reminders", "reminders", "eventkit", "macos"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Apple Reminders",
+    "shortDescription": "Use Apple Reminders from Codex",
+    "longDescription": "List reminder lists, search, read, create, update, complete, delete, and move Apple Reminders through local macOS Reminders and EventKit. Includes a one-time metadata-only AppleScript permission trigger followed by native access verification, plus guarded write behavior.",
+    "developerName": "Clemens Sageder",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "websiteURL": "https://support.apple.com/guide/reminders",
+    "privacyPolicyURL": "https://www.apple.com/legal/privacy/",
+    "termsOfServiceURL": "https://www.apple.com/legal/internet-services/terms/site.html",
+    "defaultPrompt": [
+      "Find my next reminder",
+      "Search Apple Reminders",
+      "Create a reminder"
+    ],
+    "brandColor": "#FF9500",
+    "composerIcon": "./assets/apple-reminders.png",
+    "logo": "./assets/apple-reminders.png",
+    "screenshots": []
+  }
+}

@@ -8,11 +8,8 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "types": ["node"],
-    "outDir": "plugins/apple-productivity/dist",
-    "rootDir": "plugins/apple-productivity/src",
-    "declaration": true,
-    "sourceMap": true
+    "noEmit": true
   },
-  "include": ["plugins/apple-productivity/src/**/*.ts"],
-  "exclude": ["plugins/apple-productivity/src/**/*.test.ts"]
+  "include": ["src/**/*.ts", "scripts/**/*.ts"],
+  "exclude": ["src/**/*.test.ts"]
 }

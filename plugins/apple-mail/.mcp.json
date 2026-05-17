@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "apple-mail": {
+      "command": "node",
+      "cwd": ".",
+      "args": ["./dist/index.mjs"],
+      "env": {
+        "APPLE_MAIL_WRITE_MODE": "ask",
+        "APPLE_MAIL_MAX_BODY_CHARS": "12000",
+        "APPLE_PRODUCTIVITY_RETRIEVAL_CANDIDATE_LIMIT": "30",
+        "APPLE_PRODUCTIVITY_CONTEXT_TOP_K": "5",
+        "APPLE_PRODUCTIVITY_HELPER_TIMEOUT_MS": "60000"
+      }
+    }
+  }
+}
