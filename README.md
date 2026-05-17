@@ -57,6 +57,11 @@ To load it as a Codex plugin, use the bundled marketplace entry at
 points Codex at [`plugins/apple-productivity`](plugins/apple-productivity). The
 plugin includes its manifest, skill, assets, and MCP server config.
 
+If Codex already installed an older copy of the plugin, reinstall or reload the
+plugin after rebuilding so Codex refreshes its versioned plugin cache. Stale
+cached copies can miss the bundled Calendar and Reminders helper apps that own
+the macOS permission prompts.
+
 For manual MCP client setup, point the client at the bundled server:
 
 ```json
