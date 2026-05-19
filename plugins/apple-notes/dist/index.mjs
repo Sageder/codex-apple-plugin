@@ -32244,7 +32244,8 @@ var PermissionsService = class {
           service: this.options.service,
           ok: true,
           appleScript: appleScript2,
-          nextStep: this.options.nextStep
+          nextStep: this.options.nextStep,
+          setup: this.options.setup
         };
       }
       const nativeResult = await this.options.nativeProbe();
@@ -32262,7 +32263,8 @@ var PermissionsService = class {
         service: this.options.service,
         ok: false,
         error: formatError2(error51),
-        nextStep: this.options.nextStep
+        nextStep: this.options.nextStep,
+        setup: setupFromError(error51) ?? this.options.setup
       };
     }
   }
@@ -32283,6 +32285,15 @@ function formatError2(error51) {
     }
   }
   return message;
+}
+function setupFromError(error51) {
+  if (typeof error51 === "object" && error51 !== null && "setup" in error51) {
+    const setup = error51.setup;
+    if (typeof setup === "object" && setup !== null) {
+      return setup;
+    }
+  }
+  return void 0;
 }
 
 // src/calendar/swiftCalendarBridge.ts
@@ -32327,7 +32338,10 @@ function jsonResponse(data) {
   };
 }
 function errorResponse(error51) {
-  const data = error51 instanceof SwiftBridgeError ? { error: error51.message, details: error51.stderr } : error51 instanceof SwiftCalendarBridgeError ? { error: error51.message, details: error51.stderr } : error51 instanceof RemindersNativeBridgeError ? { error: error51.message, details: error51.stderr } : error51 instanceof NotesBridgeError ? { error: error51.message, details: error51.stderr } : error51 instanceof AppleScriptPermissionError ? { error: error51.message, details: error51.stderr } : { error: error51 instanceof Error ? error51.message : String(error51) };
+  const data = withSetup(
+    error51 instanceof SwiftBridgeError ? { error: error51.message, details: error51.stderr } : error51 instanceof SwiftCalendarBridgeError ? { error: error51.message, details: error51.stderr } : error51 instanceof RemindersNativeBridgeError ? { error: error51.message, details: error51.stderr } : error51 instanceof NotesBridgeError ? { error: error51.message, details: error51.stderr } : error51 instanceof AppleScriptPermissionError ? { error: error51.message, details: error51.stderr } : { error: error51 instanceof Error ? error51.message : String(error51) },
+    error51
+  );
   return {
     isError: true,
     content: [
@@ -32337,6 +32351,16 @@ function errorResponse(error51) {
       }
     ]
   };
+}
+function withSetup(data, error51) {
+  if (typeof error51 !== "object" || error51 === null || !("setup" in error51)) {
+    return data;
+  }
+  const setup = error51.setup;
+  if (typeof setup !== "object" || setup === null) {
+    return data;
+  }
+  return { ...data, setup };
 }
 
 // src/calendar/schemas.ts

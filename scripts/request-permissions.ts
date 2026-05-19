@@ -2,6 +2,7 @@ import { getRuntimeConfig } from "../src/config.js";
 import { MailService } from "../src/mail/mailService.js";
 import { MessagesService } from "../src/messages/messagesService.js";
 import { MessagesAppleScriptSender } from "../src/messages/sender.js";
+import { MESSAGES_PERMISSION_NEXT_STEP, messagesFullDiskAccessSetup } from "../src/messages/setup.js";
 import { SqliteMessagesStore } from "../src/messages/sqliteStore.js";
 import { NotesAppleScriptBridge } from "../src/notes/notesBridge.js";
 import { NotesService } from "../src/notes/notesService.js";
@@ -69,8 +70,8 @@ const checks = [
     appleScript: sharedAppleScript,
     nativeProbe: () => messages.requestAccess(),
     summarizeNative: summarizeMessagesPermission,
-    nextStep:
-      "Approve the macOS Automation prompt for Messages, and grant Full Disk Access to Codex or the launching terminal in System Settings > Privacy & Security > Full Disk Access so the read-only Messages database can be queried."
+    nextStep: MESSAGES_PERMISSION_NEXT_STEP,
+    setup: messagesFullDiskAccessSetup()
   }),
   new PermissionsService({
     service: "notes",

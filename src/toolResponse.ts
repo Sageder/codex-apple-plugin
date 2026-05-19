@@ -16,7 +16,7 @@ export function jsonResponse(data: unknown) {
 }
 
 export function errorResponse(error: unknown) {
-  const data =
+  const data = withSetup(
     error instanceof SwiftBridgeError
       ? { error: error.message, details: error.stderr }
       : error instanceof SwiftCalendarBridgeError
@@ -27,7 +27,9 @@ export function errorResponse(error: unknown) {
         ? { error: error.message, details: error.stderr }
       : error instanceof AppleScriptPermissionError
         ? { error: error.message, details: error.stderr }
-      : { error: error instanceof Error ? error.message : String(error) };
+      : { error: error instanceof Error ? error.message : String(error) },
+    error
+  );
 
   return {
     isError: true,
@@ -38,4 +40,17 @@ export function errorResponse(error: unknown) {
       }
     ]
   };
+}
+
+function withSetup(data: Record<string, unknown>, error: unknown): Record<string, unknown> {
+  if (typeof error !== "object" || error === null || !("setup" in error)) {
+    return data;
+  }
+
+  const setup = (error as { setup?: unknown }).setup;
+  if (typeof setup !== "object" || setup === null) {
+    return data;
+  }
+
+  return { ...data, setup };
 }

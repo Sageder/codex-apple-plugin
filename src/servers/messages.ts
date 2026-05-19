@@ -4,6 +4,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { getRuntimeConfig } from "../config.js";
 import { MessagesService } from "../messages/messagesService.js";
 import { MessagesAppleScriptSender } from "../messages/sender.js";
+import { MESSAGES_PERMISSION_NEXT_STEP, messagesFullDiskAccessSetup } from "../messages/setup.js";
 import { SqliteMessagesStore } from "../messages/sqliteStore.js";
 import { AppleScriptPermissionBootstrap, OsascriptRunner } from "../permissions/appleScriptBootstrap.js";
 import { PermissionsService, summarizeMessagesPermission } from "../permissions/permissionsService.js";
@@ -34,8 +35,8 @@ registerAppleMessagesServerTools(
     appleScript,
     nativeProbe: () => messages.requestAccess(),
     summarizeNative: summarizeMessagesPermission,
-    nextStep:
-      "Approve the macOS Automation prompt for Messages, and grant Full Disk Access to Codex or the launching terminal in System Settings > Privacy & Security > Full Disk Access so the read-only Messages database can be queried."
+    nextStep: MESSAGES_PERMISSION_NEXT_STEP,
+    setup: messagesFullDiskAccessSetup()
   })
 );
 

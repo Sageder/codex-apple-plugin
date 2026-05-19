@@ -31240,11 +31240,38 @@ function jsonStringFragment(value) {
   return JSON.stringify(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 
+// src/messages/setup.ts
+var MESSAGES_FULL_DISK_ACCESS_REQUIREMENT = "Apple Messages reads require Full Disk Access for Codex or the app that launches this MCP server.";
+var MESSAGES_FULL_DISK_ACCESS_CANNOT_PROMPT = "macOS does not provide an API or first-run prompt for Full Disk Access, so the user must grant it manually.";
+var MESSAGES_FULL_DISK_ACCESS_STEPS = [
+  "Open System Settings > Privacy & Security > Full Disk Access.",
+  "Enable Codex. If the MCP server is launched from Terminal, iTerm, or another host app, enable that app too.",
+  "Quit and reopen Codex or the launching app.",
+  "Run messages_request_permissions or npm run smoke:messages again."
+];
+var MESSAGES_AUTOMATION_STEP = "For sending, also approve the macOS Automation prompt for Messages or enable Codex > Messages in System Settings > Privacy & Security > Automation.";
+var MESSAGES_PERMISSION_NEXT_STEP = [
+  MESSAGES_FULL_DISK_ACCESS_REQUIREMENT,
+  MESSAGES_FULL_DISK_ACCESS_CANNOT_PROMPT,
+  ...MESSAGES_FULL_DISK_ACCESS_STEPS,
+  MESSAGES_AUTOMATION_STEP
+].join(" ");
+function messagesFullDiskAccessSetup() {
+  return {
+    requiredAccess: "Full Disk Access",
+    cannotAutoPrompt: true,
+    reason: MESSAGES_FULL_DISK_ACCESS_REQUIREMENT,
+    steps: MESSAGES_FULL_DISK_ACCESS_STEPS,
+    automationForSending: MESSAGES_AUTOMATION_STEP
+  };
+}
+
 // src/messages/sqliteStore.ts
 import { spawn as spawn2 } from "node:child_process";
 import { homedir } from "node:os";
 import { join } from "node:path";
 var MessagesDatabaseError = class extends Error {
+  setup = messagesFullDiskAccessSetup();
   constructor(message) {
     super(message);
     this.name = "MessagesDatabaseError";
@@ -31559,7 +31586,7 @@ function appleDate(value) {
 }
 function databaseFailureMessage(stderr) {
   const detail = stderr.trim();
-  const guidance = "Unable to read Apple Messages. Grant Full Disk Access to Codex or the launching terminal, then retry. The plugin reads ~/Library/Messages/chat.db in read-only mode.";
+  const guidance = `Unable to read Apple Messages. ${MESSAGES_FULL_DISK_ACCESS_REQUIREMENT} ${MESSAGES_FULL_DISK_ACCESS_CANNOT_PROMPT} The plugin reads ~/Library/Messages/chat.db in read-only mode.`;
   return detail ? `${guidance} sqlite3 said: ${detail.slice(0, 500)}` : guidance;
 }
 
@@ -31755,7 +31782,8 @@ var PermissionsService = class {
           service: this.options.service,
           ok: true,
           appleScript: appleScript2,
-          nextStep: this.options.nextStep
+          nextStep: this.options.nextStep,
+          setup: this.options.setup
         };
       }
       const nativeResult = await this.options.nativeProbe();
@@ -31773,7 +31801,8 @@ var PermissionsService = class {
         service: this.options.service,
         ok: false,
         error: formatError2(error51),
-        nextStep: this.options.nextStep
+        nextStep: this.options.nextStep,
+        setup: setupFromError(error51) ?? this.options.setup
       };
     }
   }
@@ -31793,6 +31822,15 @@ function formatError2(error51) {
     }
   }
   return message;
+}
+function setupFromError(error51) {
+  if (typeof error51 === "object" && error51 !== null && "setup" in error51) {
+    const setup = error51.setup;
+    if (typeof setup === "object" && setup !== null) {
+      return setup;
+    }
+  }
+  return void 0;
 }
 
 // src/calendar/swiftCalendarBridge.ts
@@ -32508,7 +32546,10 @@ function jsonResponse(data) {
   };
 }
 function errorResponse(error51) {
-  const data = error51 instanceof SwiftBridgeError ? { error: error51.message, details: error51.stderr } : error51 instanceof SwiftCalendarBridgeError ? { error: error51.message, details: error51.stderr } : error51 instanceof RemindersNativeBridgeError ? { error: error51.message, details: error51.stderr } : error51 instanceof NotesBridgeError ? { error: error51.message, details: error51.stderr } : error51 instanceof AppleScriptPermissionError ? { error: error51.message, details: error51.stderr } : { error: error51 instanceof Error ? error51.message : String(error51) };
+  const data = withSetup(
+    error51 instanceof SwiftBridgeError ? { error: error51.message, details: error51.stderr } : error51 instanceof SwiftCalendarBridgeError ? { error: error51.message, details: error51.stderr } : error51 instanceof RemindersNativeBridgeError ? { error: error51.message, details: error51.stderr } : error51 instanceof NotesBridgeError ? { error: error51.message, details: error51.stderr } : error51 instanceof AppleScriptPermissionError ? { error: error51.message, details: error51.stderr } : { error: error51 instanceof Error ? error51.message : String(error51) },
+    error51
+  );
   return {
     isError: true,
     content: [
@@ -32518,6 +32559,16 @@ function errorResponse(error51) {
       }
     ]
   };
+}
+function withSetup(data, error51) {
+  if (typeof error51 !== "object" || error51 === null || !("setup" in error51)) {
+    return data;
+  }
+  const setup = error51.setup;
+  if (typeof setup !== "object" || setup === null) {
+    return data;
+  }
+  return { ...data, setup };
 }
 
 // src/calendar/schemas.ts
@@ -32860,7 +32911,7 @@ function registerMessagesPermissionTool(server2, permissions) {
     server2,
     "messages_request_permissions",
     "Request Apple Messages permissions",
-    "First-run setup tool that triggers macOS Apple Messages Automation permission prompts through a metadata-only AppleScript probe, then verifies read-only Messages database access.",
+    "First-run setup tool that triggers macOS Apple Messages Automation permission prompts through a metadata-only AppleScript probe, then verifies read-only Messages database access. Full Disk Access cannot be auto-prompted by macOS; failures include manual setup steps.",
     permissions
   );
 }
@@ -33005,7 +33056,8 @@ registerAppleMessagesServerTools(
     appleScript,
     nativeProbe: () => messages.requestAccess(),
     summarizeNative: summarizeMessagesPermission,
-    nextStep: "Approve the macOS Automation prompt for Messages, and grant Full Disk Access to Codex or the launching terminal in System Settings > Privacy & Security > Full Disk Access so the read-only Messages database can be queried."
+    nextStep: MESSAGES_PERMISSION_NEXT_STEP,
+    setup: messagesFullDiskAccessSetup()
   })
 );
 await server.connect(new StdioServerTransport());

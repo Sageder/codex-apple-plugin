@@ -9,7 +9,7 @@ Use this skill when a task should access local Apple Messages.
 
 ## Fast routing
 
-- First use, a new Mac, or permission failures: `messages_request_permissions`.
+- First use, a new Mac, or permission failures: `messages_request_permissions`. If it reports missing Full Disk Access, tell the user macOS cannot prompt for that permission automatically and they must enable it manually.
 - New/latest messages: `messages_fetch_new`, with `maxTextChars: 0` for metadata-only checks.
 - Broad lookup: `messages_search`, then `messages_read` for selected handles or a chat handle.
 - Writes: call `messages_send` with `dryRun: true` for a preview, then repeat with `confirm: true` only after the user clearly confirms.
@@ -62,6 +62,7 @@ messages_send({"recipient":"+41790000000","text":"On my way.","confirm":true})
 - `APPLE_MESSAGES_WRITE_MODE=ask` is the default. `messages_send` returns a metadata-only preview unless the call includes `confirm: true`.
 - `APPLE_MESSAGES_WRITE_MODE=direct` means full local send access.
 - Reads require Full Disk Access for Codex or the terminal/app that launches the MCP server, because macOS protects `~/Library/Messages/chat.db`.
+- macOS does not provide an API or first-run prompt for Full Disk Access. The setup tool can detect the missing access and return steps, but the user must enable it in System Settings > Privacy & Security > Full Disk Access, then restart Codex or the launching app.
 
 ## Privacy
 

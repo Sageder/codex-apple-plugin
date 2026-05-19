@@ -1,9 +1,16 @@
 import { spawn } from "node:child_process";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import {
+  MESSAGES_FULL_DISK_ACCESS_CANNOT_PROMPT,
+  MESSAGES_FULL_DISK_ACCESS_REQUIREMENT,
+  messagesFullDiskAccessSetup
+} from "./setup.js";
 import type { MessageDirection, MessagesChatHandlePayload, RawMessagesChatSummary, RawMessagesMessageSummary } from "./types.js";
 
 export class MessagesDatabaseError extends Error {
+  readonly setup = messagesFullDiskAccessSetup();
+
   constructor(message: string) {
     super(message);
     this.name = "MessagesDatabaseError";
@@ -419,7 +426,6 @@ function appleDate(value: number | null): string | undefined {
 
 function databaseFailureMessage(stderr: string): string {
   const detail = stderr.trim();
-  const guidance =
-    "Unable to read Apple Messages. Grant Full Disk Access to Codex or the launching terminal, then retry. The plugin reads ~/Library/Messages/chat.db in read-only mode.";
+  const guidance = `Unable to read Apple Messages. ${MESSAGES_FULL_DISK_ACCESS_REQUIREMENT} ${MESSAGES_FULL_DISK_ACCESS_CANNOT_PROMPT} The plugin reads ~/Library/Messages/chat.db in read-only mode.`;
   return detail ? `${guidance} sqlite3 said: ${detail.slice(0, 500)}` : guidance;
 }

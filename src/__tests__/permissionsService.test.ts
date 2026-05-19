@@ -177,4 +177,47 @@ describe("permissions service", () => {
     });
     expect(json).not.toContain("private");
   });
+
+  it("returns setup guidance when a Messages native probe cannot read the database", async () => {
+    const service = new PermissionsService({
+      service: "messages",
+      nativeAction: "messages.requestAccess",
+      appleScript: {
+        async request() {
+          return {
+            action: "osascript.messages.metadataProbe",
+            summary: { serviceCount: 1 }
+          };
+        }
+      },
+      async nativeProbe() {
+        throw Object.assign(new Error("authorization denied"), {
+          setup: {
+            requiredAccess: "Full Disk Access",
+            cannotAutoPrompt: true,
+            steps: ["Enable Codex in Full Disk Access"]
+          }
+        });
+      },
+      summarizeNative: summarizeMessagesPermission,
+      nextStep: "Enable Messages Full Disk Access"
+    });
+
+    const result = await service.request();
+
+    expect(result).toMatchObject({
+      ok: false,
+      result: {
+        service: "messages",
+        ok: false,
+        error: "authorization denied",
+        nextStep: "Enable Messages Full Disk Access",
+        setup: {
+          requiredAccess: "Full Disk Access",
+          cannotAutoPrompt: true,
+          steps: ["Enable Codex in Full Disk Access"]
+        }
+      }
+    });
+  });
 });

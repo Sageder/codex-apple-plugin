@@ -42,7 +42,7 @@ export function registerMessagesPermissionTool(server: McpServer, permissions: P
     server,
     "messages_request_permissions",
     "Request Apple Messages permissions",
-    "First-run setup tool that triggers macOS Apple Messages Automation permission prompts through a metadata-only AppleScript probe, then verifies read-only Messages database access.",
+    "First-run setup tool that triggers macOS Apple Messages Automation permission prompts through a metadata-only AppleScript probe, then verifies read-only Messages database access. Full Disk Access cannot be auto-prompted by macOS; failures include manual setup steps.",
     permissions
   );
 }

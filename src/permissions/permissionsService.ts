@@ -12,6 +12,7 @@ export interface PermissionCheckResult {
   };
   error?: string;
   nextStep?: string;
+  setup?: Record<string, unknown>;
 }
 
 export interface ServicePermissionOptions<TNativeResult> {
@@ -23,6 +24,7 @@ export interface ServicePermissionOptions<TNativeResult> {
   nativeProbe?: () => Promise<TNativeResult>;
   summarizeNative?: (result: TNativeResult) => Record<string, number | string | boolean>;
   nextStep: string;
+  setup?: Record<string, unknown>;
 }
 
 export class PermissionsService<TNativeResult> {
@@ -49,7 +51,8 @@ export class PermissionsService<TNativeResult> {
           service: this.options.service,
           ok: true,
           appleScript,
-          nextStep: this.options.nextStep
+          nextStep: this.options.nextStep,
+          setup: this.options.setup
         };
       }
 
@@ -69,7 +72,8 @@ export class PermissionsService<TNativeResult> {
         service: this.options.service,
         ok: false,
         error: formatError(error),
-        nextStep: this.options.nextStep
+        nextStep: this.options.nextStep,
+        setup: setupFromError(error) ?? this.options.setup
       };
     }
   }
@@ -112,4 +116,14 @@ function formatError(error: unknown): string {
     }
   }
   return message;
+}
+
+function setupFromError(error: unknown): Record<string, unknown> | undefined {
+  if (typeof error === "object" && error !== null && "setup" in error) {
+    const setup = (error as { setup?: unknown }).setup;
+    if (typeof setup === "object" && setup !== null) {
+      return setup as Record<string, unknown>;
+    }
+  }
+  return undefined;
 }

@@ -132,6 +132,11 @@ Privacy & Security > Calendars and enable Full Access for Codex or the
 Messages reads use `~/Library/Messages/chat.db` in read-only mode through
 `sqlite3`. macOS protects that database, so grant Full Disk Access to Codex or
 the terminal/app that launches the MCP server before using read tools.
+macOS does not provide an API or first-run prompt for Full Disk Access. The
+`messages_request_permissions` tool therefore detects missing access and returns
+manual setup steps instead of silently failing: open System Settings > Privacy &
+Security > Full Disk Access, enable Codex or the launching terminal/app, restart
+that app, and retry the permission or smoke command.
 
 Notes uses local Apple Events because Apple does not expose a Notes equivalent
 to EventKit. Grant Automation access to Notes for Codex or the launching
