@@ -13,7 +13,15 @@ export type WriteAction =
   | "reminders.complete"
   | "reminders.delete"
   | "reminders.move"
-  | "messages.send";
+  | "messages.send"
+  | "notes.create"
+  | "notes.update"
+  | "notes.append"
+  | "notes.delete"
+  | "notes.move"
+  | "notes.createFolder"
+  | "notes.renameFolder"
+  | "notes.deleteFolder";
 
 export interface WriteDecision {
   allowed: boolean;

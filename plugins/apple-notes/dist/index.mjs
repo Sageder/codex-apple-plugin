@@ -2980,7 +2980,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve2.call(this, root, ref);
+      let _sch = resolve.call(this, root, ref);
       if (_sch === void 0) {
         const schema = (_a3 = root.localRefs) === null || _a3 === void 0 ? void 0 : _a3[ref];
         const { schemaId } = this.opts;
@@ -3007,7 +3007,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve2(root, ref) {
+    function resolve(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -3638,7 +3638,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve2(baseURI, relativeURI, options) {
+    function resolve(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const resolved = resolveComponent(parse3(baseURI, schemelessOptions), parse3(relativeURI, schemelessOptions), schemelessOptions, true);
       schemelessOptions.skipEscape = true;
@@ -3896,7 +3896,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve: resolve2,
+      resolve,
       resolveComponent,
       equal,
       serialize,
@@ -28827,7 +28827,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-        await new Promise((resolve2) => setTimeout(resolve2, pollInterval));
+        await new Promise((resolve) => setTimeout(resolve, pollInterval));
         options?.signal?.throwIfAborted();
       }
     } catch (error51) {
@@ -28844,7 +28844,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-    return new Promise((resolve2, reject) => {
+    return new Promise((resolve, reject) => {
       const earlyReject = (error51) => {
         reject(error51);
       };
@@ -28922,7 +28922,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve2(parseResult.data);
+            resolve(parseResult.data);
           }
         } catch (error51) {
           reject(error51);
@@ -29183,12 +29183,12 @@ var Protocol = class {
       }
     } catch {
     }
-    return new Promise((resolve2, reject) => {
+    return new Promise((resolve, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve2, interval);
+      const timeoutId = setTimeout(resolve, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -30288,7 +30288,7 @@ var McpServer = class {
     let task = createTaskResult.task;
     const pollInterval = task.pollInterval ?? 5e3;
     while (task.status !== "completed" && task.status !== "failed" && task.status !== "cancelled") {
-      await new Promise((resolve2) => setTimeout(resolve2, pollInterval));
+      await new Promise((resolve) => setTimeout(resolve, pollInterval));
       const updatedTask = await extra.taskStore.getTask(taskId);
       if (!updatedTask) {
         throw new McpError(ErrorCode.InternalError, `Task ${taskId} not found during polling`);
@@ -30937,12 +30937,12 @@ var StdioServerTransport = class {
     this.onclose?.();
   }
   send(message) {
-    return new Promise((resolve2) => {
+    return new Promise((resolve) => {
       const json2 = serializeMessage(message);
       if (this._stdout.write(json2)) {
-        resolve2();
+        resolve();
       } else {
-        this._stdout.once("drain", resolve2);
+        this._stdout.once("drain", resolve);
       }
     });
   }
@@ -30987,624 +30987,23 @@ function getRuntimeConfig(env = process.env, service) {
   };
 }
 
-// src/writeGuard.ts
-function decideWrite(config3, action, confirm, dryRun) {
-  const label = actionLabel(action);
-  if (dryRun) {
-    return {
-      allowed: false,
-      mode: config3.writeMode,
-      reason: `${label} dry run requested`
-    };
-  }
-  if (config3.writeMode === "direct") {
-    return {
-      allowed: true,
-      mode: config3.writeMode,
-      reason: "direct write mode enabled"
-    };
-  }
-  return {
-    allowed: confirm === true,
-    mode: config3.writeMode,
-    reason: confirm === true ? "explicit confirmation supplied" : "confirm: true required in ask mode"
-  };
-}
-function actionLabel(action) {
-  return action;
-}
-
-// src/mail/handle.ts
-function encodeMessageHandle(payload) {
-  return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
-}
-function decodeMessageHandle(handle) {
-  const decoded = JSON.parse(Buffer.from(handle, "base64url").toString("utf8"));
-  if (!decoded.account || !decoded.mailbox || typeof decoded.id !== "number") {
-    throw new Error("Invalid mail message handle");
-  }
-  return decoded;
-}
-function encodeUndoToken(payload) {
-  return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
-}
-function decodeUndoToken(token) {
-  const decoded = JSON.parse(Buffer.from(token, "base64url").toString("utf8"));
-  if (!decoded.account || !decoded.fromMailbox || !decoded.toMailbox || typeof decoded.id !== "number") {
-    throw new Error("Invalid mail undo token");
-  }
-  return decoded;
-}
-
-// src/mail/retrieval.ts
-var stopwords = /* @__PURE__ */ new Set([
-  "a",
-  "an",
-  "and",
-  "are",
-  "as",
-  "at",
-  "be",
-  "by",
-  "for",
-  "from",
-  "i",
-  "in",
-  "is",
-  "it",
-  "of",
-  "on",
-  "or",
-  "that",
-  "the",
-  "to",
-  "with",
-  "you"
-]);
-function tokenize(value) {
-  return value.toLowerCase().split(/[^a-z0-9_@.+-]+/i).map((token) => token.trim()).filter((token) => token.length > 1 && !stopwords.has(token));
-}
-function scoreSummary(message, query) {
-  const terms = tokenize(query);
-  if (terms.length === 0) {
-    return 0;
-  }
-  const subject = message.subject.toLowerCase();
-  const sender = message.sender.toLowerCase();
-  const recipients = message.recipients.map((recipient) => `${recipient.name} ${recipient.address}`.toLowerCase()).join(" ");
-  const mailbox = message.mailbox.toLowerCase();
-  return terms.reduce((score, term) => {
-    let next = score;
-    if (subject.includes(term)) next += 5;
-    if (sender.includes(term)) next += 3;
-    if (recipients.includes(term)) next += 4;
-    if (mailbox.includes(term)) next += 1;
-    return next;
-  }, 0);
-}
-function chunkText(content, maxChars = 1200) {
-  const clean = content.replace(/\r/g, "").replace(/[ \t]+\n/g, "\n").trim();
-  if (!clean) {
-    return [];
-  }
-  const paragraphs = clean.split(/\n{2,}/);
-  const chunks = [];
-  let current = "";
-  for (const paragraph of paragraphs) {
-    const normalized = paragraph.replace(/\s+/g, " ").trim();
-    if (!normalized) {
-      continue;
-    }
-    if ((current + " " + normalized).trim().length > maxChars && current) {
-      chunks.push(current);
-      current = "";
-    }
-    if (normalized.length > maxChars) {
-      for (let index = 0; index < normalized.length; index += maxChars) {
-        chunks.push(normalized.slice(index, index + maxChars));
-      }
-      continue;
-    }
-    current = (current + " " + normalized).trim();
-  }
-  if (current) {
-    chunks.push(current);
-  }
-  return chunks;
-}
-function rankContext(messages, query, topK) {
-  const terms = tokenize(query);
-  const snippets = [];
-  for (const message of messages) {
-    const baseScore = scoreSummary(message, query);
-    const chunks = chunkText(message.content);
-    for (const chunk of chunks.length ? chunks : [""]) {
-      const lowerChunk = chunk.toLowerCase();
-      const bodyScore = terms.reduce((score2, term) => score2 + occurrences(lowerChunk, term), 0);
-      const score = baseScore + bodyScore;
-      snippets.push({
-        handle: message.handle,
-        subject: message.subject,
-        sender: message.sender,
-        recipients: message.recipients.map((recipient) => recipient.name || recipient.address).filter(Boolean),
-        dateReceived: message.dateReceived,
-        dateSent: message.dateSent,
-        mailbox: message.mailbox,
-        score,
-        reason: buildReason({ baseScore, bodyScore, matchedTerms: terms.filter((term) => lowerChunk.includes(term)) }),
-        snippet: chunk.slice(0, 1200)
-      });
-    }
-  }
-  return snippets.filter((snippet) => snippet.score > 0 || terms.length === 0).sort((a, b) => b.score - a.score).slice(0, topK);
-}
-function occurrences(value, term) {
-  let count = 0;
-  let index = value.indexOf(term);
-  while (index !== -1) {
-    count += 1;
-    index = value.indexOf(term, index + term.length);
-  }
-  return count;
-}
-function buildReason(input) {
-  const reasons = [];
-  if (input.baseScore > 0) reasons.push("metadata matched");
-  if (input.bodyScore > 0) reasons.push(`body matched ${input.matchedTerms.slice(0, 6).join(", ")}`);
-  return reasons.length ? reasons.join("; ") : "recent candidate";
-}
-
-// src/mail/mailService.ts
-var MailService = class {
-  constructor(bridge2, config3) {
-    this.bridge = bridge2;
-    this.config = config3;
-  }
-  bridge;
-  config;
-  async listAccounts() {
-    const accounts = await this.bridge.call("mail.listAccounts");
-    return { accounts };
-  }
-  async requestPermission() {
-    return this.bridge.call("mail.requestPermission");
-  }
-  async listMailboxes() {
-    return this.bridge.call("mail.listMailboxes");
-  }
-  async search(args) {
-    const input = {
-      query: args.query,
-      subject: args.subject,
-      account: args.account,
-      mailbox: args.mailbox,
-      scope: args.scope,
-      sender: args.sender,
-      recipient: args.recipient,
-      participant: args.participant,
-      unreadOnly: args.unreadOnly,
-      since: args.since,
-      before: args.before,
-      includeTrash: args.includeTrash,
-      limit: args.limit ?? 20,
-      maxScanPerMailbox: args.maxScanPerMailbox ?? 200
-    };
-    const raw = await this.bridge.call("mail.search", input);
-    return {
-      messages: raw.map(encodeSummary).sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-    };
-  }
-  async retrieveContext(args) {
-    const candidateLimit = args.limit ?? this.config.retrievalCandidateLimit;
-    const search = await this.search({ ...args, limit: candidateLimit });
-    const ranked = search.messages.map((message) => ({ message, score: scoreSummary(message, args.query ?? "") + (message.score ?? 0) })).sort((a, b) => b.score - a.score).slice(0, candidateLimit).map((entry) => entry.message);
-    const bodies = ranked.length ? await this.read({
-      handles: ranked.map((message) => message.handle),
-      maxBodyChars: args.maxBodyChars ?? this.config.maxBodyChars
-    }) : { messages: [] };
-    return {
-      query: args.query ?? "",
-      candidates: search.messages.length,
-      snippets: rankContext(bodies.messages, args.query ?? "", args.topK ?? this.config.contextTopK)
-    };
-  }
-  async read(args) {
-    const rawHandles = args.handles.map(decodeMessageHandle);
-    const raw = await this.bridge.call("mail.read", {
-      handles: rawHandles,
-      maxBodyChars: args.maxBodyChars ?? this.config.maxBodyChars
-    });
-    return { messages: raw.map(encodeBody) };
-  }
-  async compose(args) {
-    return this.bridge.call("mail.compose", {
-      ...args,
-      cc: args.cc ?? [],
-      bcc: args.bcc ?? [],
-      visible: args.visible ?? true
-    });
-  }
-  async send(args) {
-    const decision = decideWrite(this.config, "mail.send", args.confirm, args.dryRun);
-    if (!decision.allowed) {
-      return { mode: decision.mode, allowed: false, sent: false, preview: previewMessage(args), reason: decision.reason };
-    }
-    return this.bridge.call("mail.send", {
-      ...args,
-      cc: args.cc ?? [],
-      bcc: args.bcc ?? []
-    });
-  }
-  archive(args) {
-    return this.move({ ...args, targetRole: "archive" }, "mail.archive");
-  }
-  delete(args) {
-    return this.move({ ...args, targetRole: "trash" }, "mail.delete");
-  }
-  moveToJunk(args) {
-    return this.move({ ...args, targetRole: "junk" }, "mail.move");
-  }
-  async move(args, action = "mail.move") {
-    const decision = decideWrite(this.config, action, args.confirm, args.dryRun);
-    const decoded = args.handles.map(decodeMessageHandle);
-    if (!decision.allowed) {
-      return {
-        mode: decision.mode,
-        allowed: false,
-        moved: false,
-        targetRole: args.targetRole,
-        targetMailbox: args.targetMailbox,
-        count: decoded.length,
-        targets: decoded,
-        reason: decision.reason
-      };
-    }
-    const result = await this.bridge.call("mail.move", {
-      handles: decoded,
-      role: args.targetRole,
-      targetRole: args.targetRole,
-      targetMailbox: args.targetMailbox
-    });
-    return {
-      ...result,
-      moved: result.moved.map((item) => encodeMovedItem(item, action))
-    };
-  }
-  async undoMove(args) {
-    const decision = decideWrite(this.config, "mail.move", args.confirm, args.dryRun);
-    const tokens = args.undoTokens.map(decodeUndoToken);
-    const handles = tokens.map((token) => ({
-      account: token.account,
-      mailbox: token.toMailbox,
-      id: token.id,
-      messageId: token.messageId
-    }));
-    if (!decision.allowed) {
-      return {
-        mode: decision.mode,
-        allowed: false,
-        moved: false,
-        count: tokens.length,
-        targets: tokens,
-        reason: decision.reason
-      };
-    }
-    const moved = [];
-    for (let index = 0; index < tokens.length; index += 1) {
-      const token = tokens[index];
-      const result = await this.bridge.call("mail.move", {
-        handles: [handles[index]],
-        targetMailbox: token.fromMailbox
-      });
-      moved.push(...result.moved.map((item) => encodeMovedItem(item, "mail.move")));
-    }
-    return { moved };
-  }
-};
-function encodeSummary(raw) {
-  return {
-    ...raw,
-    handle: encodeMessageHandle(raw.handle)
-  };
-}
-function encodeBody(raw) {
-  return {
-    ...raw,
-    handle: encodeMessageHandle(raw.handle)
-  };
-}
-function previewMessage(args) {
-  return {
-    from: args.from,
-    to: args.to,
-    cc: args.cc ?? [],
-    bcc: args.bcc ?? [],
-    subject: args.subject,
-    bodyChars: args.body.length
-  };
-}
-function encodeMovedItem(item, action) {
-  const handle = encodeMessageHandle({
-    account: item.account,
-    mailbox: item.toMailbox,
-    id: item.id,
-    messageId: item.messageId
-  });
-  const previousHandle = encodeMessageHandle({
-    account: item.account,
-    mailbox: item.fromMailbox,
-    id: item.id,
-    messageId: item.messageId
-  });
-  const undoToken = encodeUndoToken({
-    action,
-    account: item.account,
-    id: item.id,
-    messageId: item.messageId,
-    fromMailbox: item.fromMailbox,
-    toMailbox: item.toMailbox,
-    createdAt: (/* @__PURE__ */ new Date()).toISOString()
-  });
-  return {
-    ...item,
-    handle,
-    previousHandle,
-    undoToken
-  };
-}
-
-// src/permissions/appleScriptBootstrap.ts
+// src/notes/notesBridge.ts
 import { spawn } from "node:child_process";
-var AppleScriptPermissionError = class extends Error {
+var NotesBridgeError = class extends Error {
   constructor(message, stderr) {
     super(message);
     this.stderr = stderr;
-    this.name = "AppleScriptPermissionError";
+    this.name = "NotesBridgeError";
   }
   stderr;
 };
-var OsascriptRunner = class {
-  constructor(timeoutMs) {
-    this.timeoutMs = timeoutMs;
-  }
-  timeoutMs;
-  run(script) {
-    return new Promise((resolve2, reject) => {
-      const child = spawn("/usr/bin/osascript", ["-e", script], {
-        stdio: ["ignore", "pipe", "pipe"]
-      });
-      let stdout = "";
-      let stderr = "";
-      let settled = false;
-      const timer = setTimeout(() => {
-        if (settled) {
-          return;
-        }
-        settled = true;
-        child.kill("SIGTERM");
-        reject(new AppleScriptPermissionError(`AppleScript permission probe timed out after ${this.timeoutMs}ms`));
-      }, this.timeoutMs);
-      child.stdout.setEncoding("utf8");
-      child.stderr.setEncoding("utf8");
-      child.stdout.on("data", (chunk) => {
-        stdout += chunk;
-      });
-      child.stderr.on("data", (chunk) => {
-        stderr += chunk;
-      });
-      child.on("error", (error51) => {
-        if (settled) {
-          return;
-        }
-        settled = true;
-        clearTimeout(timer);
-        reject(new AppleScriptPermissionError(`Failed to start AppleScript permission probe: ${error51.message}`));
-      });
-      child.on("close", (code) => {
-        if (settled) {
-          return;
-        }
-        settled = true;
-        clearTimeout(timer);
-        if (code === 0) {
-          resolve2(stdout);
-          return;
-        }
-        reject(new AppleScriptPermissionError(`AppleScript permission probe exited with code ${code}`, stderr.trim()));
-      });
-    });
-  }
-};
-var AppleScriptPermissionBootstrap = class {
-  constructor(runner) {
-    this.runner = runner;
-  }
-  runner;
-  async request(service) {
-    const script = scriptForPermissionProbe(service);
-    const stdout = await this.runner.run(script);
-    return {
-      action: `osascript.${service}.metadataProbe`,
-      summary: sanitizeAppleScriptSummary(service, parseProbeOutput(stdout))
-    };
-  }
-};
-function scriptForPermissionProbe(service) {
-  switch (service) {
-    case "mail":
-      return [
-        'tell application "Mail"',
-        "  set accountCount to count of accounts",
-        "  set mailboxCount to 0",
-        "  repeat with mailAccount in accounts",
-        "    set mailboxCount to mailboxCount + (count of mailboxes of mailAccount)",
-        "  end repeat",
-        '  return "{\\"accountCount\\":" & accountCount & ",\\"mailboxCount\\":" & mailboxCount & "}"',
-        "end tell"
-      ].join("\n");
-    case "calendar":
-      return [
-        'tell application "Calendar"',
-        "  set calendarCount to count of calendars",
-        '  return "{\\"calendarCount\\":" & calendarCount & "}"',
-        "end tell"
-      ].join("\n");
-    case "reminders":
-      return [
-        'tell application "Reminders"',
-        "  set listCount to count of lists",
-        '  return "{\\"listCount\\":" & listCount & "}"',
-        "end tell"
-      ].join("\n");
-    case "messages":
-      return [
-        'tell application "Messages"',
-        "  set serviceCount to count of services",
-        '  return "{\\"serviceCount\\":" & serviceCount & "}"',
-        "end tell"
-      ].join("\n");
-    case "notes":
-      return [
-        'tell application "Notes"',
-        "  set accountCount to count of accounts",
-        "  set folderCount to 0",
-        "  set noteCount to 0",
-        "  repeat with notesAccount in accounts",
-        "    set folderCount to folderCount + (count of folders of notesAccount)",
-        "    set noteCount to noteCount + (count of notes of notesAccount)",
-        "  end repeat",
-        '  return "{\\"accountCount\\":" & accountCount & ",\\"folderCount\\":" & folderCount & ",\\"noteCount\\":" & noteCount & "}"',
-        "end tell"
-      ].join("\n");
-  }
-}
-function parseProbeOutput(stdout) {
-  const trimmed = stdout.trim();
-  if (!trimmed) {
-    throw new AppleScriptPermissionError("AppleScript permission probe returned no output");
-  }
-  try {
-    return JSON.parse(trimmed);
-  } catch (error51) {
-    throw new AppleScriptPermissionError(
-      `AppleScript permission probe returned invalid JSON: ${error51 instanceof Error ? error51.message : String(error51)}`
-    );
-  }
-}
-function sanitizeAppleScriptSummary(service, value) {
-  if (typeof value !== "object" || value === null) {
-    throw new AppleScriptPermissionError("AppleScript permission probe returned an invalid summary");
-  }
-  switch (service) {
-    case "mail":
-      return {
-        accountCount: numberField(value, "accountCount"),
-        mailboxCount: numberField(value, "mailboxCount")
-      };
-    case "calendar":
-      return { calendarCount: numberField(value, "calendarCount") };
-    case "reminders":
-      return { listCount: numberField(value, "listCount") };
-    case "messages":
-      return { serviceCount: numberField(value, "serviceCount") };
-    case "notes":
-      return {
-        accountCount: numberField(value, "accountCount"),
-        folderCount: numberField(value, "folderCount"),
-        noteCount: numberField(value, "noteCount")
-      };
-  }
-}
-function numberField(value, key) {
-  const field = value[key];
-  if (typeof field !== "number") {
-    throw new AppleScriptPermissionError(`AppleScript permission probe did not return numeric ${key}`);
-  }
-  return field;
-}
-
-// src/permissions/permissionsService.ts
-var PermissionsService = class {
+var NotesAppleScriptBridge = class {
   constructor(options) {
     this.options = options;
   }
   options;
-  async request(_args = {}) {
-    const result = await this.requestOne();
-    return {
-      ok: result.ok,
-      result,
-      note: this.options.nativeProbe ? "This runs an AppleScript metadata-only permission trigger, then verifies native access. It does not read mail bodies, calendar notes, reminder notes, note bodies, or message text." : "This runs an AppleScript metadata-only permission trigger and returns explicit setup guidance. It does not read mail bodies, calendar notes, reminder notes, note bodies, or message text."
-    };
-  }
-  async requestOne() {
-    try {
-      const appleScript2 = await this.options.appleScript.request(this.options.service);
-      if (!this.options.nativeProbe || !this.options.nativeAction || !this.options.summarizeNative) {
-        return {
-          service: this.options.service,
-          ok: true,
-          appleScript: appleScript2,
-          nextStep: this.options.nextStep
-        };
-      }
-      const nativeResult = await this.options.nativeProbe();
-      return {
-        service: this.options.service,
-        ok: true,
-        appleScript: appleScript2,
-        native: {
-          action: this.options.nativeAction,
-          summary: this.options.summarizeNative(nativeResult)
-        }
-      };
-    } catch (error51) {
-      return {
-        service: this.options.service,
-        ok: false,
-        error: formatError2(error51),
-        nextStep: this.options.nextStep
-      };
-    }
-  }
-};
-function summarizeMailPermission(result) {
-  return {
-    accountCount: result.accountCount,
-    mailboxCount: result.mailboxCount
-  };
-}
-function formatError2(error51) {
-  const message = error51 instanceof Error ? error51.message : String(error51);
-  if (typeof error51 === "object" && error51 !== null && "stderr" in error51 && typeof error51.stderr === "string") {
-    const detail = error51.stderr.trim();
-    if (detail) {
-      return `${message}: ${detail.slice(0, 1e3)}`;
-    }
-  }
-  return message;
-}
-
-// src/swiftBridge.ts
-import { spawn as spawn2 } from "node:child_process";
-import { existsSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-var SwiftBridgeError = class extends Error {
-  constructor(message, stderr) {
-    super(message);
-    this.stderr = stderr;
-    this.name = "SwiftBridgeError";
-  }
-  stderr;
-};
-var SwiftBridge = class {
-  constructor(options) {
-    this.options = options;
-  }
-  options;
-  async call(command, input = {}) {
-    const stdout = await this.runHelper({ command, input });
+  async run(command, input = {}) {
+    const stdout = await this.runScript({ command, input });
     const trimmed = stdout.trim();
     if (!trimmed) {
       return void 0;
@@ -31612,20 +31011,15 @@ var SwiftBridge = class {
     try {
       return JSON.parse(trimmed);
     } catch (error51) {
-      throw new SwiftBridgeError(
-        `Swift helper returned invalid JSON: ${error51 instanceof Error ? error51.message : String(error51)}`
+      throw new NotesBridgeError(
+        `Apple Notes bridge returned invalid JSON: ${error51 instanceof Error ? error51.message : String(error51)}`,
+        trimmed.slice(0, 2e3)
       );
     }
   }
-  runHelper(payload) {
-    return new Promise((resolvePromise, reject) => {
-      const builtHelper = this.options.helperPath ?? defaultHelperPath();
-      const swiftDir = defaultSwiftPackagePath();
-      const hasBuiltHelper = existsSync(builtHelper);
-      const command = hasBuiltHelper ? builtHelper : "swift";
-      const args = hasBuiltHelper ? [] : ["run", "--package-path", swiftDir, "apple-mail-helper"];
-      const child = spawn2(command, args, {
-        cwd: hasBuiltHelper ? dirname(builtHelper) : swiftDir,
+  runScript(payload) {
+    return new Promise((resolve, reject) => {
+      const child = spawn("/usr/bin/osascript", ["-l", "JavaScript", "-e", NOTES_JXA_SOURCE], {
         stdio: ["pipe", "pipe", "pipe"]
       });
       let stdout = "";
@@ -31637,7 +31031,11 @@ var SwiftBridge = class {
         }
         settled = true;
         child.kill("SIGTERM");
-        reject(new SwiftBridgeError(`Swift helper timed out after ${this.options.timeoutMs}ms`));
+        reject(
+          new NotesBridgeError(
+            `Apple Notes bridge timed out after ${this.options.timeoutMs}ms. Notes did not answer Apple Events; open Notes, finish any onboarding/unlock prompts, and allow Notes automation for Codex or the launching terminal.`
+          )
+        );
       }, this.options.timeoutMs);
       child.stdout.setEncoding("utf8");
       child.stderr.setEncoding("utf8");
@@ -31653,7 +31051,7 @@ var SwiftBridge = class {
         }
         settled = true;
         clearTimeout(timer);
-        reject(new SwiftBridgeError(`Failed to start Swift helper: ${error51.message}`));
+        reject(new NotesBridgeError(`Failed to start Apple Notes bridge: ${error51.message}`));
       });
       child.on("close", (code) => {
         if (settled) {
@@ -31662,54 +31060,15 @@ var SwiftBridge = class {
         settled = true;
         clearTimeout(timer);
         if (code === 0) {
-          resolvePromise(stdout);
+          resolve(stdout);
           return;
         }
-        reject(new SwiftBridgeError(`Swift helper exited with code ${code}`, stderr.trim().slice(0, 2e3)));
+        reject(new NotesBridgeError(`Apple Notes bridge exited with code ${code}`, stderr.trim().slice(0, 2e3)));
       });
       child.stdin.end(`${JSON.stringify(payload)}
 `);
     });
   }
-};
-function moduleDir() {
-  return dirname(fileURLToPath(import.meta.url));
-}
-function defaultHelperPath() {
-  const dir = moduleDir();
-  const candidates = [
-    resolve(dir, "apple-mail-helper"),
-    resolve(dir, "../plugins/apple-mail/dist/apple-mail-helper"),
-    resolve(dir, "../../../plugins/apple-mail/dist/apple-mail-helper"),
-    resolve(dir, "../swift/.build/debug/apple-mail-helper"),
-    resolve(dir, "../../../swift/.build/debug/apple-mail-helper")
-  ];
-  return candidates.find(existsSync) ?? candidates[0];
-}
-function defaultSwiftPackagePath() {
-  const dir = moduleDir();
-  const candidates = [resolve(dir, "../swift"), resolve(dir, "../../../swift")];
-  return candidates.find((candidate) => existsSync(resolve(candidate, "Package.swift"))) ?? candidates[0];
-}
-
-// src/calendar/swiftCalendarBridge.ts
-var SwiftCalendarBridgeError = class extends Error {
-  constructor(message, stderr) {
-    super(message);
-    this.stderr = stderr;
-    this.name = "SwiftCalendarBridgeError";
-  }
-  stderr;
-};
-
-// src/notes/notesBridge.ts
-var NotesBridgeError = class extends Error {
-  constructor(message, stderr) {
-    super(message);
-    this.stderr = stderr;
-    this.name = "NotesBridgeError";
-  }
-  stderr;
 };
 var NOTES_JXA_SOURCE = String.raw`
 ObjC.import("Foundation");
@@ -32334,12 +31693,585 @@ function dispatch(command, input) {
 JSON.stringify(dispatch(payload.command, payload.input || {}));
 `;
 
+// src/writeGuard.ts
+function decideWrite(config3, action, confirm, dryRun) {
+  const label = actionLabel(action);
+  if (dryRun) {
+    return {
+      allowed: false,
+      mode: config3.writeMode,
+      reason: `${label} dry run requested`
+    };
+  }
+  if (config3.writeMode === "direct") {
+    return {
+      allowed: true,
+      mode: config3.writeMode,
+      reason: "direct write mode enabled"
+    };
+  }
+  return {
+    allowed: confirm === true,
+    mode: config3.writeMode,
+    reason: confirm === true ? "explicit confirmation supplied" : "confirm: true required in ask mode"
+  };
+}
+function actionLabel(action) {
+  return action;
+}
+
+// src/notes/handle.ts
+function encodeNotesFolderHandle(handle) {
+  return Buffer.from(JSON.stringify(handle), "utf8").toString("base64url");
+}
+function decodeNotesFolderHandle(handle) {
+  const decoded = decodeHandle(handle);
+  if (!decoded.id) {
+    throw new Error("Invalid Apple Notes folder handle: missing id");
+  }
+  return {
+    id: decoded.id,
+    accountId: decoded.accountId,
+    accountName: decoded.accountName,
+    path: decoded.path
+  };
+}
+function encodeNotesNoteHandle(handle) {
+  return Buffer.from(JSON.stringify(handle), "utf8").toString("base64url");
+}
+function decodeNotesNoteHandle(handle) {
+  const decoded = decodeHandle(handle);
+  if (!decoded.id) {
+    throw new Error("Invalid Apple Notes note handle: missing id");
+  }
+  return {
+    id: decoded.id,
+    accountId: decoded.accountId,
+    accountName: decoded.accountName,
+    folderId: decoded.folderId,
+    folderName: decoded.folderName,
+    folderPath: decoded.folderPath
+  };
+}
+function decodeHandle(handle) {
+  try {
+    const decoded = JSON.parse(Buffer.from(handle, "base64url").toString("utf8"));
+    if (typeof decoded !== "object" || decoded === null) {
+      throw new Error("handle is not an object");
+    }
+    return decoded;
+  } catch (error51) {
+    throw new Error(`Invalid Apple Notes handle: ${error51 instanceof Error ? error51.message : String(error51)}`);
+  }
+}
+
+// src/notes/notesService.ts
+var NotesService = class {
+  constructor(runtime, config3) {
+    this.runtime = runtime;
+    this.config = config3;
+  }
+  runtime;
+  config;
+  async requestAccess() {
+    return this.runtime.run("requestAccess");
+  }
+  async listAccounts(args = {}) {
+    const accounts = await this.runtime.run("listAccounts", args);
+    return { accounts };
+  }
+  async listFolders(args = {}) {
+    const folders = await this.runtime.run("listFolders", this.decodeParentFolderTarget(args));
+    return { folders: folders.map(encodeFolder) };
+  }
+  async search(args) {
+    const notes2 = await this.runtime.run("search", {
+      ...this.decodeFolderTargets(args),
+      limit: args.limit ?? 20,
+      maxScan: args.maxScan ?? 1e3,
+      maxSnippetChars: args.maxSnippetChars ?? 500
+    });
+    return { notes: notes2.map(encodeSummary) };
+  }
+  async read(args) {
+    const notes2 = await this.runtime.run("read", {
+      ...args,
+      handles: args.handles.map(decodeNotesNoteHandle),
+      maxBodyChars: args.maxBodyChars ?? this.config.maxBodyChars
+    });
+    return { notes: notes2.map(encodeBody) };
+  }
+  async createFolder(args) {
+    const decision = decideWrite(this.config, "notes.createFolder", args.confirm, args.dryRun);
+    const input = this.decodeParentFolderTarget(args);
+    if (!decision.allowed) {
+      return {
+        mode: decision.mode,
+        allowed: false,
+        created: false,
+        preview: {
+          name: args.name,
+          account: args.account,
+          parentFolder: args.parentFolder,
+          parentFolderHandle: input.parentFolderHandle
+        },
+        reason: decision.reason
+      };
+    }
+    const result = await this.runtime.run("createFolder", stripWriteArgs(input));
+    return { ...result, folder: encodeFolder(result.folder) };
+  }
+  async renameFolder(args) {
+    const decision = decideWrite(this.config, "notes.renameFolder", args.confirm, args.dryRun);
+    const folderHandle = decodeNotesFolderHandle(args.folderHandle);
+    if (!decision.allowed) {
+      return {
+        mode: decision.mode,
+        allowed: false,
+        renamed: false,
+        target: folderHandle,
+        name: args.name,
+        reason: decision.reason
+      };
+    }
+    const result = await this.runtime.run("renameFolder", {
+      folderHandle,
+      name: args.name
+    });
+    return { ...result, folder: encodeFolder(result.folder) };
+  }
+  async deleteFolder(args) {
+    const decision = decideWrite(this.config, "notes.deleteFolder", args.confirm, args.dryRun);
+    const folderHandle = decodeNotesFolderHandle(args.folderHandle);
+    if (!decision.allowed) {
+      return {
+        mode: decision.mode,
+        allowed: false,
+        deleted: false,
+        target: folderHandle,
+        reason: decision.reason
+      };
+    }
+    const result = await this.runtime.run("deleteFolder", { folderHandle });
+    return { ...result, folder: encodeFolder(result.folder) };
+  }
+  async create(args) {
+    const decision = decideWrite(this.config, "notes.create", args.confirm, args.dryRun);
+    const input = this.decodeFolderTargets(args);
+    if (!decision.allowed) {
+      return {
+        mode: decision.mode,
+        allowed: false,
+        created: false,
+        preview: previewCreate(args, input.folderHandle),
+        reason: decision.reason
+      };
+    }
+    const result = await this.runtime.run("create", stripWriteArgs(input));
+    return { ...result, note: encodeBody(result.note) };
+  }
+  async update(args) {
+    const decision = decideWrite(this.config, "notes.update", args.confirm, args.dryRun);
+    const handle = decodeNotesNoteHandle(args.handle);
+    const input = {
+      ...this.decodeFolderTargets(args),
+      handle
+    };
+    if (!decision.allowed) {
+      return {
+        mode: decision.mode,
+        allowed: false,
+        updated: false,
+        target: handle,
+        preview: previewUpdate(args, input.folderHandle),
+        reason: decision.reason
+      };
+    }
+    const result = await this.runtime.run("update", stripWriteArgs(input));
+    return { ...result, note: encodeBody(result.note) };
+  }
+  async append(args) {
+    const decision = decideWrite(this.config, "notes.append", args.confirm, args.dryRun);
+    const handle = decodeNotesNoteHandle(args.handle);
+    if (!decision.allowed) {
+      return {
+        mode: decision.mode,
+        allowed: false,
+        appended: false,
+        target: handle,
+        bodyChars: args.body.length,
+        reason: decision.reason
+      };
+    }
+    const result = await this.runtime.run("append", {
+      ...stripWriteArgs(args),
+      handle
+    });
+    return { ...result, note: encodeBody(result.note) };
+  }
+  async move(args) {
+    const decision = decideWrite(this.config, "notes.move", args.confirm, args.dryRun);
+    const handles = args.handles.map(decodeNotesNoteHandle);
+    const input = {
+      ...this.decodeFolderTargets(args),
+      handles
+    };
+    if (!decision.allowed) {
+      return {
+        mode: decision.mode,
+        allowed: false,
+        moved: false,
+        targets: handles,
+        folder: args.folder,
+        folderHandle: input.folderHandle,
+        reason: decision.reason
+      };
+    }
+    const result = await this.runtime.run("move", stripWriteArgs(input));
+    return { moved: result.moved.map(encodeBody) };
+  }
+  async delete(args) {
+    const decision = decideWrite(this.config, "notes.delete", args.confirm, args.dryRun);
+    const handles = args.handles.map(decodeNotesNoteHandle);
+    if (!decision.allowed) {
+      return {
+        mode: decision.mode,
+        allowed: false,
+        deleted: false,
+        targets: handles,
+        reason: decision.reason
+      };
+    }
+    const result = await this.runtime.run("delete", { handles });
+    return { ...result, notes: result.notes.map(encodeBody) };
+  }
+  async show(args) {
+    const result = await this.runtime.run("show", {
+      handle: decodeNotesNoteHandle(args.handle),
+      separately: args.separately ?? false
+    });
+    return { ...result, note: encodeBody(result.note) };
+  }
+  decodeFolderTargets(args) {
+    const { folderHandle, ...rest } = args;
+    return {
+      ...rest,
+      folderHandle: folderHandle ? decodeNotesFolderHandle(folderHandle) : void 0
+    };
+  }
+  decodeParentFolderTarget(args) {
+    const { parentFolderHandle, ...rest } = args;
+    return {
+      ...rest,
+      parentFolderHandle: parentFolderHandle ? decodeNotesFolderHandle(parentFolderHandle) : void 0
+    };
+  }
+};
+function encodeFolder(raw) {
+  return {
+    ...raw,
+    handle: encodeNotesFolderHandle(raw.handle)
+  };
+}
+function encodeSummary(raw) {
+  return {
+    ...raw,
+    handle: encodeNotesNoteHandle(raw.handle)
+  };
+}
+function encodeBody(raw) {
+  return {
+    ...raw,
+    handle: encodeNotesNoteHandle(raw.handle)
+  };
+}
+function stripWriteArgs(args) {
+  const { confirm: _confirm, dryRun: _dryRun, ...input } = args;
+  return input;
+}
+function previewCreate(args, folderHandle) {
+  return {
+    title: args.title,
+    bodyChars: args.body?.length ?? 0,
+    bodyFormat: args.bodyFormat ?? "plain",
+    account: args.account,
+    folder: args.folder,
+    folderHandle
+  };
+}
+function previewUpdate(args, folderHandle) {
+  return {
+    title: args.title,
+    body: Object.hasOwn(args, "body") ? {
+      bodyChars: args.body?.length ?? 0,
+      cleared: args.body === null
+    } : void 0,
+    bodyFormat: args.bodyFormat ?? "plain",
+    account: args.account,
+    folder: args.folder,
+    folderHandle
+  };
+}
+
+// src/permissions/appleScriptBootstrap.ts
+import { spawn as spawn2 } from "node:child_process";
+var AppleScriptPermissionError = class extends Error {
+  constructor(message, stderr) {
+    super(message);
+    this.stderr = stderr;
+    this.name = "AppleScriptPermissionError";
+  }
+  stderr;
+};
+var OsascriptRunner = class {
+  constructor(timeoutMs) {
+    this.timeoutMs = timeoutMs;
+  }
+  timeoutMs;
+  run(script) {
+    return new Promise((resolve, reject) => {
+      const child = spawn2("/usr/bin/osascript", ["-e", script], {
+        stdio: ["ignore", "pipe", "pipe"]
+      });
+      let stdout = "";
+      let stderr = "";
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        child.kill("SIGTERM");
+        reject(new AppleScriptPermissionError(`AppleScript permission probe timed out after ${this.timeoutMs}ms`));
+      }, this.timeoutMs);
+      child.stdout.setEncoding("utf8");
+      child.stderr.setEncoding("utf8");
+      child.stdout.on("data", (chunk) => {
+        stdout += chunk;
+      });
+      child.stderr.on("data", (chunk) => {
+        stderr += chunk;
+      });
+      child.on("error", (error51) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        clearTimeout(timer);
+        reject(new AppleScriptPermissionError(`Failed to start AppleScript permission probe: ${error51.message}`));
+      });
+      child.on("close", (code) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        clearTimeout(timer);
+        if (code === 0) {
+          resolve(stdout);
+          return;
+        }
+        reject(new AppleScriptPermissionError(`AppleScript permission probe exited with code ${code}`, stderr.trim()));
+      });
+    });
+  }
+};
+var AppleScriptPermissionBootstrap = class {
+  constructor(runner) {
+    this.runner = runner;
+  }
+  runner;
+  async request(service) {
+    const script = scriptForPermissionProbe(service);
+    const stdout = await this.runner.run(script);
+    return {
+      action: `osascript.${service}.metadataProbe`,
+      summary: sanitizeAppleScriptSummary(service, parseProbeOutput(stdout))
+    };
+  }
+};
+function scriptForPermissionProbe(service) {
+  switch (service) {
+    case "mail":
+      return [
+        'tell application "Mail"',
+        "  set accountCount to count of accounts",
+        "  set mailboxCount to 0",
+        "  repeat with mailAccount in accounts",
+        "    set mailboxCount to mailboxCount + (count of mailboxes of mailAccount)",
+        "  end repeat",
+        '  return "{\\"accountCount\\":" & accountCount & ",\\"mailboxCount\\":" & mailboxCount & "}"',
+        "end tell"
+      ].join("\n");
+    case "calendar":
+      return [
+        'tell application "Calendar"',
+        "  set calendarCount to count of calendars",
+        '  return "{\\"calendarCount\\":" & calendarCount & "}"',
+        "end tell"
+      ].join("\n");
+    case "reminders":
+      return [
+        'tell application "Reminders"',
+        "  set listCount to count of lists",
+        '  return "{\\"listCount\\":" & listCount & "}"',
+        "end tell"
+      ].join("\n");
+    case "messages":
+      return [
+        'tell application "Messages"',
+        "  set serviceCount to count of services",
+        '  return "{\\"serviceCount\\":" & serviceCount & "}"',
+        "end tell"
+      ].join("\n");
+    case "notes":
+      return [
+        'tell application "Notes"',
+        "  set accountCount to count of accounts",
+        "  set folderCount to 0",
+        "  set noteCount to 0",
+        "  repeat with notesAccount in accounts",
+        "    set folderCount to folderCount + (count of folders of notesAccount)",
+        "    set noteCount to noteCount + (count of notes of notesAccount)",
+        "  end repeat",
+        '  return "{\\"accountCount\\":" & accountCount & ",\\"folderCount\\":" & folderCount & ",\\"noteCount\\":" & noteCount & "}"',
+        "end tell"
+      ].join("\n");
+  }
+}
+function parseProbeOutput(stdout) {
+  const trimmed = stdout.trim();
+  if (!trimmed) {
+    throw new AppleScriptPermissionError("AppleScript permission probe returned no output");
+  }
+  try {
+    return JSON.parse(trimmed);
+  } catch (error51) {
+    throw new AppleScriptPermissionError(
+      `AppleScript permission probe returned invalid JSON: ${error51 instanceof Error ? error51.message : String(error51)}`
+    );
+  }
+}
+function sanitizeAppleScriptSummary(service, value) {
+  if (typeof value !== "object" || value === null) {
+    throw new AppleScriptPermissionError("AppleScript permission probe returned an invalid summary");
+  }
+  switch (service) {
+    case "mail":
+      return {
+        accountCount: numberField(value, "accountCount"),
+        mailboxCount: numberField(value, "mailboxCount")
+      };
+    case "calendar":
+      return { calendarCount: numberField(value, "calendarCount") };
+    case "reminders":
+      return { listCount: numberField(value, "listCount") };
+    case "messages":
+      return { serviceCount: numberField(value, "serviceCount") };
+    case "notes":
+      return {
+        accountCount: numberField(value, "accountCount"),
+        folderCount: numberField(value, "folderCount"),
+        noteCount: numberField(value, "noteCount")
+      };
+  }
+}
+function numberField(value, key) {
+  const field = value[key];
+  if (typeof field !== "number") {
+    throw new AppleScriptPermissionError(`AppleScript permission probe did not return numeric ${key}`);
+  }
+  return field;
+}
+
+// src/permissions/permissionsService.ts
+var PermissionsService = class {
+  constructor(options) {
+    this.options = options;
+  }
+  options;
+  async request(_args = {}) {
+    const result = await this.requestOne();
+    return {
+      ok: result.ok,
+      result,
+      note: this.options.nativeProbe ? "This runs an AppleScript metadata-only permission trigger, then verifies native access. It does not read mail bodies, calendar notes, reminder notes, note bodies, or message text." : "This runs an AppleScript metadata-only permission trigger and returns explicit setup guidance. It does not read mail bodies, calendar notes, reminder notes, note bodies, or message text."
+    };
+  }
+  async requestOne() {
+    try {
+      const appleScript2 = await this.options.appleScript.request(this.options.service);
+      if (!this.options.nativeProbe || !this.options.nativeAction || !this.options.summarizeNative) {
+        return {
+          service: this.options.service,
+          ok: true,
+          appleScript: appleScript2,
+          nextStep: this.options.nextStep
+        };
+      }
+      const nativeResult = await this.options.nativeProbe();
+      return {
+        service: this.options.service,
+        ok: true,
+        appleScript: appleScript2,
+        native: {
+          action: this.options.nativeAction,
+          summary: this.options.summarizeNative(nativeResult)
+        }
+      };
+    } catch (error51) {
+      return {
+        service: this.options.service,
+        ok: false,
+        error: formatError2(error51),
+        nextStep: this.options.nextStep
+      };
+    }
+  }
+};
+function summarizeNotesPermission(result) {
+  return {
+    accountCount: result.accountCount,
+    folderCount: result.folderCount,
+    noteCount: result.noteCount
+  };
+}
+function formatError2(error51) {
+  const message = error51 instanceof Error ? error51.message : String(error51);
+  if (typeof error51 === "object" && error51 !== null && "stderr" in error51 && typeof error51.stderr === "string") {
+    const detail = error51.stderr.trim();
+    if (detail) {
+      return `${message}: ${detail.slice(0, 1e3)}`;
+    }
+  }
+  return message;
+}
+
+// src/calendar/swiftCalendarBridge.ts
+var SwiftCalendarBridgeError = class extends Error {
+  constructor(message, stderr) {
+    super(message);
+    this.stderr = stderr;
+    this.name = "SwiftCalendarBridgeError";
+  }
+  stderr;
+};
+
 // src/reminders/nativeBridge.ts
 var RemindersNativeBridgeError = class extends Error {
   constructor(message, stderr) {
     super(message);
     this.stderr = stderr;
     this.name = "RemindersNativeBridgeError";
+  }
+  stderr;
+};
+
+// src/swiftBridge.ts
+var SwiftBridgeError = class extends Error {
+  constructor(message, stderr) {
+    super(message);
+    this.stderr = stderr;
+    this.name = "SwiftBridgeError";
   }
   stderr;
 };
@@ -32487,135 +32419,6 @@ var mailUndoMoveSchema = external_exports.object({
   confirm: external_exports.boolean().optional(),
   dryRun: external_exports.boolean().optional()
 }).strict();
-
-// src/mail/tools.ts
-function registerMailTools(server2, mail2) {
-  server2.registerTool(
-    "mail_list_accounts",
-    {
-      title: "List Apple Mail accounts",
-      description: "List Apple Mail accounts, addresses, and mailbox names configured on this Mac.",
-      annotations: { readOnlyHint: true }
-    },
-    async () => safe(() => mail2.listAccounts())
-  );
-  server2.registerTool(
-    "mail_list_mailboxes",
-    {
-      title: "List Apple Mail mailboxes",
-      description: "List Apple Mail mailboxes with inferred roles such as inbox, sent, archive, trash, junk, and other.",
-      annotations: { readOnlyHint: true }
-    },
-    async () => safe(() => mail2.listMailboxes())
-  );
-  server2.registerTool(
-    "mail_search",
-    {
-      title: "Search Apple Mail",
-      description: "Search live Apple Mail metadata, including recipients, and return message handles for follow-up reads or actions. Supports inbox, sent, archive, trash, junk, all, and exact mailbox scopes.",
-      inputSchema: mailSearchSchema,
-      annotations: { readOnlyHint: true }
-    },
-    async (args) => safe(() => mail2.search(args))
-  );
-  server2.registerTool(
-    "mail_retrieve_context",
-    {
-      title: "Retrieve Apple Mail context",
-      description: "Perform live RAG-style retrieval over Apple Mail by searching candidates, including recipient metadata, reading bodies in memory, and returning ranked useful snippets. Use scope sent plus recipient for sent-mail questions.",
-      inputSchema: mailRetrieveContextSchema,
-      annotations: { readOnlyHint: true }
-    },
-    async (args) => safe(() => mail2.retrieveContext(args))
-  );
-  server2.registerTool(
-    "mail_read",
-    {
-      title: "Read Apple Mail messages",
-      description: "Read selected Apple Mail messages by handle with body length limits.",
-      inputSchema: mailReadSchema,
-      annotations: { readOnlyHint: true }
-    },
-    async (args) => safe(() => mail2.read(args))
-  );
-  server2.registerTool(
-    "mail_compose",
-    {
-      title: "Compose Apple Mail draft",
-      description: "Create a visible Apple Mail compose window or draft.",
-      inputSchema: mailComposeSchema,
-      annotations: { readOnlyHint: false, destructiveHint: false }
-    },
-    async (args) => safe(() => mail2.compose(args))
-  );
-  server2.registerTool(
-    "mail_send",
-    {
-      title: "Send Apple Mail message",
-      description: "Send an email through Apple Mail when the write guard permits it; otherwise return a preview.",
-      inputSchema: mailSendSchema,
-      annotations: { readOnlyHint: false, destructiveHint: true }
-    },
-    async (args) => safe(() => mail2.send(args))
-  );
-  server2.registerTool(
-    "mail_move",
-    {
-      title: "Move Apple Mail messages",
-      description: "Move selected messages to an account role mailbox such as inbox, archive, trash, or junk, or to an exact mailbox name. Returns undo tokens.",
-      inputSchema: mailMoveSchema,
-      annotations: { readOnlyHint: false, destructiveHint: true }
-    },
-    async (args) => safe(() => mail2.move(args))
-  );
-  server2.registerTool(
-    "mail_undo_move",
-    {
-      title: "Undo Apple Mail move",
-      description: "Move messages back using undo tokens returned by mail_move, mail_archive, mail_delete, or mail_junk.",
-      inputSchema: mailUndoMoveSchema,
-      annotations: { readOnlyHint: false, destructiveHint: true }
-    },
-    async (args) => safe(() => mail2.undoMove(args))
-  );
-  server2.registerTool(
-    "mail_archive",
-    {
-      title: "Archive Apple Mail messages",
-      description: "Move selected Apple Mail messages to the account archive mailbox when the write guard permits it.",
-      inputSchema: mailWriteSchema,
-      annotations: { readOnlyHint: false, destructiveHint: true }
-    },
-    async (args) => safe(() => mail2.archive(args))
-  );
-  server2.registerTool(
-    "mail_delete",
-    {
-      title: "Delete Apple Mail messages",
-      description: "Move selected Apple Mail messages to Trash or Deleted Items when the write guard permits it. This does not permanently expunge mail.",
-      inputSchema: mailWriteSchema,
-      annotations: { readOnlyHint: false, destructiveHint: true }
-    },
-    async (args) => safe(() => mail2.delete(args))
-  );
-  server2.registerTool(
-    "mail_junk",
-    {
-      title: "Move Apple Mail messages to Junk",
-      description: "Move selected Apple Mail messages to the account junk mailbox when the write guard permits it. Returns undo tokens.",
-      inputSchema: mailWriteSchema,
-      annotations: { readOnlyHint: false, destructiveHint: true }
-    },
-    async (args) => safe(() => mail2.moveToJunk(args))
-  );
-}
-async function safe(callback) {
-  try {
-    return jsonResponse(await callback());
-  } catch (error51) {
-    return errorResponse(error51);
-  }
-}
 
 // src/messages/schemas.ts
 var optionalDate3 = external_exports.string().datetime().optional();
@@ -32767,16 +32570,157 @@ var notesShowSchema = external_exports.object({
   separately: external_exports.boolean().optional().default(false)
 }).strict();
 
+// src/notes/tools.ts
+function registerNotesTools(server2, notes2) {
+  server2.registerTool(
+    "notes_list_accounts",
+    {
+      title: "List Apple Notes accounts",
+      description: "List Apple Notes accounts configured on this Mac, with optional folder and note counts.",
+      inputSchema: notesListAccountsSchema,
+      annotations: { readOnlyHint: true }
+    },
+    async (args) => safe(() => notes2.listAccounts(args))
+  );
+  server2.registerTool(
+    "notes_list_folders",
+    {
+      title: "List Apple Notes folders",
+      description: "List Apple Notes folders and return folder handles for targeted reads, creates, moves, and folder actions.",
+      inputSchema: notesListFoldersSchema,
+      annotations: { readOnlyHint: true }
+    },
+    async (args) => safe(() => notes2.listFolders(args))
+  );
+  server2.registerTool(
+    "notes_search",
+    {
+      title: "Search Apple Notes",
+      description: "Search live Apple Notes titles, plaintext note bodies, folders, accounts, and attachment names. Returns note handles for follow-up reads or actions.",
+      inputSchema: notesSearchSchema,
+      annotations: { readOnlyHint: true }
+    },
+    async (args) => safe(() => notes2.search(args))
+  );
+  server2.registerTool(
+    "notes_read",
+    {
+      title: "Read Apple Notes",
+      description: "Read selected Apple Notes by handle with body length limits and optional attachment metadata.",
+      inputSchema: notesReadSchema,
+      annotations: { readOnlyHint: true }
+    },
+    async (args) => safe(() => notes2.read(args))
+  );
+  server2.registerTool(
+    "notes_create_folder",
+    {
+      title: "Create Apple Notes folder",
+      description: "Create an Apple Notes folder when the write guard permits it; otherwise return a preview.",
+      inputSchema: notesCreateFolderSchema,
+      annotations: { readOnlyHint: false, destructiveHint: false }
+    },
+    async (args) => safe(() => notes2.createFolder(args))
+  );
+  server2.registerTool(
+    "notes_rename_folder",
+    {
+      title: "Rename Apple Notes folder",
+      description: "Rename an Apple Notes folder when the write guard permits it; otherwise return a preview.",
+      inputSchema: notesRenameFolderSchema,
+      annotations: { readOnlyHint: false, destructiveHint: false }
+    },
+    async (args) => safe(() => notes2.renameFolder(args))
+  );
+  server2.registerTool(
+    "notes_delete_folder",
+    {
+      title: "Delete Apple Notes folder",
+      description: "Delete an Apple Notes folder when the write guard permits it. Use with care because this affects all notes in the folder.",
+      inputSchema: notesDeleteFolderSchema,
+      annotations: { readOnlyHint: false, destructiveHint: true }
+    },
+    async (args) => safe(() => notes2.deleteFolder(args))
+  );
+  server2.registerTool(
+    "notes_create",
+    {
+      title: "Create Apple Note",
+      description: "Create an Apple Note when the write guard permits it; otherwise return a preview.",
+      inputSchema: notesCreateSchema,
+      annotations: { readOnlyHint: false, destructiveHint: false }
+    },
+    async (args) => safe(() => notes2.create(args))
+  );
+  server2.registerTool(
+    "notes_update",
+    {
+      title: "Update Apple Note",
+      description: "Patch an Apple Note title/body/folder when the write guard permits it; otherwise return a preview.",
+      inputSchema: notesUpdateSchema,
+      annotations: { readOnlyHint: false, destructiveHint: false }
+    },
+    async (args) => safe(() => notes2.update(args))
+  );
+  server2.registerTool(
+    "notes_append",
+    {
+      title: "Append to Apple Note",
+      description: "Append text or HTML to an Apple Note when the write guard permits it; otherwise return a metadata-only preview.",
+      inputSchema: notesAppendSchema,
+      annotations: { readOnlyHint: false, destructiveHint: false }
+    },
+    async (args) => safe(() => notes2.append(args))
+  );
+  server2.registerTool(
+    "notes_move",
+    {
+      title: "Move Apple Notes",
+      description: "Move selected Apple Notes to another folder when the write guard permits it.",
+      inputSchema: notesMoveSchema,
+      annotations: { readOnlyHint: false, destructiveHint: false }
+    },
+    async (args) => safe(() => notes2.move(args))
+  );
+  server2.registerTool(
+    "notes_delete",
+    {
+      title: "Delete Apple Notes",
+      description: "Delete selected Apple Notes when the write guard permits it.",
+      inputSchema: notesWriteSchema,
+      annotations: { readOnlyHint: false, destructiveHint: true }
+    },
+    async (args) => safe(() => notes2.delete(args))
+  );
+  server2.registerTool(
+    "notes_show",
+    {
+      title: "Show Apple Note",
+      description: "Open a selected Apple Note in Notes.app.",
+      inputSchema: notesShowSchema,
+      annotations: { readOnlyHint: true, destructiveHint: false }
+    },
+    async (args) => safe(() => notes2.show(args))
+  );
+}
+async function safe(callback) {
+  try {
+    return jsonResponse(await callback());
+  } catch (error51) {
+    return errorResponse(error51);
+  }
+}
+
 // src/permissions/schemas.ts
 var requestServicePermissionSchema = external_exports.object({}).strict();
 
 // src/permissions/tools.ts
-function registerMailPermissionTool(server2, permissions) {
+function registerNotesPermissionTool(server2, permissions) {
   registerPermissionTool(
     server2,
-    "mail_request_permissions",
-    "Request Apple Mail permissions",
-    "First-run setup tool that triggers macOS Apple Mail Automation permission prompts through a metadata-only AppleScript probe, then verifies native Mail access.",
+    "notes_request_permissions",
+    "Request Apple Notes permissions",
+    "First-run setup tool that triggers macOS Apple Notes Automation permission prompts through a metadata-only AppleScript probe, then verifies local Notes access.",
     permissions
   );
 }
@@ -32892,30 +32836,29 @@ var remindersMoveSchema = external_exports.object({
 }).strict();
 
 // src/servers/register.ts
-function registerAppleMailServerTools(server2, mail2, permissions) {
-  registerMailPermissionTool(server2, permissions);
-  registerMailTools(server2, mail2);
+function registerAppleNotesServerTools(server2, notes2, permissions) {
+  registerNotesPermissionTool(server2, permissions);
+  registerNotesTools(server2, notes2);
 }
 
-// src/servers/mail.ts
-var config2 = getRuntimeConfig(process.env, "mail");
-var bridge = new SwiftBridge({ timeoutMs: config2.helperTimeoutMs });
-var mail = new MailService(bridge, config2);
+// src/servers/notes.ts
+var config2 = getRuntimeConfig(process.env, "notes");
+var notes = new NotesService(new NotesAppleScriptBridge({ timeoutMs: config2.helperTimeoutMs }), config2);
 var appleScript = new AppleScriptPermissionBootstrap(new OsascriptRunner(config2.helperTimeoutMs));
 var server = new McpServer({
-  name: "apple-mail",
+  name: "apple-notes",
   version: "0.2.0"
 });
-registerAppleMailServerTools(
+registerAppleNotesServerTools(
   server,
-  mail,
+  notes,
   new PermissionsService({
-    service: "mail",
-    nativeAction: "mail.requestPermission",
+    service: "notes",
+    nativeAction: "notes.requestAccess",
     appleScript,
-    nativeProbe: () => mail.requestPermission(),
-    summarizeNative: summarizeMailPermission,
-    nextStep: "Approve the macOS Automation prompt for Mail, or enable Codex for Mail in System Settings > Privacy & Security > Automation."
+    nativeProbe: () => notes.requestAccess(),
+    summarizeNative: summarizeNotesPermission,
+    nextStep: "Approve the macOS Automation prompt for Notes, or enable Codex for Notes in System Settings > Privacy & Security > Automation."
   })
 );
 await server.connect(new StdioServerTransport());

@@ -128,6 +128,19 @@ export function scriptForPermissionProbe(service: AppleServiceName): string {
         '  return "{\\"serviceCount\\":" & serviceCount & "}"',
         "end tell"
       ].join("\n");
+    case "notes":
+      return [
+        'tell application "Notes"',
+        "  set accountCount to count of accounts",
+        "  set folderCount to 0",
+        "  set noteCount to 0",
+        "  repeat with notesAccount in accounts",
+        "    set folderCount to folderCount + (count of folders of notesAccount)",
+        "    set noteCount to noteCount + (count of notes of notesAccount)",
+        "  end repeat",
+        '  return "{\\"accountCount\\":" & accountCount & ",\\"folderCount\\":" & folderCount & ",\\"noteCount\\":" & noteCount & "}"',
+        "end tell"
+      ].join("\n");
   }
 }
 
@@ -163,6 +176,12 @@ function sanitizeAppleScriptSummary(service: AppleServiceName, value: unknown): 
       return { listCount: numberField(value, "listCount") };
     case "messages":
       return { serviceCount: numberField(value, "serviceCount") };
+    case "notes":
+      return {
+        accountCount: numberField(value, "accountCount"),
+        folderCount: numberField(value, "folderCount"),
+        noteCount: numberField(value, "noteCount")
+      };
   }
 }
 

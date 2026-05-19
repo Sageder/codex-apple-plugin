@@ -1,4 +1,5 @@
 import { SwiftCalendarBridgeError } from "./calendar/swiftCalendarBridge.js";
+import { NotesBridgeError } from "./notes/notesBridge.js";
 import { AppleScriptPermissionError } from "./permissions/appleScriptBootstrap.js";
 import { RemindersNativeBridgeError } from "./reminders/nativeBridge.js";
 import { SwiftBridgeError } from "./swiftBridge.js";
@@ -21,6 +22,8 @@ export function errorResponse(error: unknown) {
       : error instanceof SwiftCalendarBridgeError
         ? { error: error.message, details: error.stderr }
       : error instanceof RemindersNativeBridgeError
+        ? { error: error.message, details: error.stderr }
+      : error instanceof NotesBridgeError
         ? { error: error.message, details: error.stderr }
       : error instanceof AppleScriptPermissionError
         ? { error: error.message, details: error.stderr }

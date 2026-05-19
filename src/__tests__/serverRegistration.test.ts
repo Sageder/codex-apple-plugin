@@ -4,6 +4,7 @@ import {
   registerAppleCalendarServerTools,
   registerAppleMailServerTools,
   registerAppleMessagesServerTools,
+  registerAppleNotesServerTools,
   registerAppleRemindersServerTools
 } from "../servers/register.js";
 
@@ -93,5 +94,29 @@ describe("split plugin server registrations", () => {
       "messages_send"
     ]);
     expect(names.every((name) => name.startsWith("messages_"))).toBe(true);
+  });
+
+  it("registers only Notes tools on the Apple Notes server", () => {
+    const { server, names } = fakeServer();
+
+    registerAppleNotesServerTools(server, {} as never, { request: vi.fn() });
+
+    expect(names).toEqual([
+      "notes_request_permissions",
+      "notes_list_accounts",
+      "notes_list_folders",
+      "notes_search",
+      "notes_read",
+      "notes_create_folder",
+      "notes_rename_folder",
+      "notes_delete_folder",
+      "notes_create",
+      "notes_update",
+      "notes_append",
+      "notes_move",
+      "notes_delete",
+      "notes_show"
+    ]);
+    expect(names.every((name) => name.startsWith("notes_"))).toBe(true);
   });
 });

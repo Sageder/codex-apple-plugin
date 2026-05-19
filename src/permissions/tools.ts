@@ -47,6 +47,16 @@ export function registerMessagesPermissionTool(server: McpServer, permissions: P
   );
 }
 
+export function registerNotesPermissionTool(server: McpServer, permissions: PermissionRequester): void {
+  registerPermissionTool(
+    server,
+    "notes_request_permissions",
+    "Request Apple Notes permissions",
+    "First-run setup tool that triggers macOS Apple Notes Automation permission prompts through a metadata-only AppleScript probe, then verifies local Notes access.",
+    permissions
+  );
+}
+
 function registerPermissionTool(
   server: McpServer,
   name: string,

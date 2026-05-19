@@ -1,0 +1,36 @@
+{
+  "name": "apple-notes",
+  "version": "0.2.0",
+  "description": "Access Apple Notes from Codex on macOS.",
+  "author": {
+    "name": "Clemens Sageder",
+    "email": "local@example.invalid",
+    "url": "https://github.com/Sageder"
+  },
+  "homepage": "https://support.apple.com/notes",
+  "repository": "https://github.com/Sageder/codex-apple-plugin",
+  "license": "MIT",
+  "keywords": ["apple-notes", "notes", "macos"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Apple Notes",
+    "shortDescription": "Use Apple Notes from Codex",
+    "longDescription": "List accounts and folders, search/read notes, inspect attachment metadata, show notes, and create, update, append, move, delete, create-folder, rename-folder, and delete-folder Apple Notes through local macOS Notes. Uses local Apple Events access and guarded write behavior.",
+    "developerName": "Clemens Sageder",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "websiteURL": "https://support.apple.com/notes",
+    "privacyPolicyURL": "https://www.apple.com/legal/privacy/",
+    "termsOfServiceURL": "https://www.apple.com/legal/internet-services/terms/site.html",
+    "defaultPrompt": [
+      "Search Apple Notes",
+      "Read an Apple Note",
+      "Create an Apple Note"
+    ],
+    "brandColor": "#FFCC00",
+    "composerIcon": "./assets/apple-notes.png",
+    "logo": "./assets/apple-notes.png",
+    "screenshots": []
+  }
+}

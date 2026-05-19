@@ -35,8 +35,8 @@ export class PermissionsService<TNativeResult> {
       ok: result.ok,
       result,
       note: this.options.nativeProbe
-        ? "This runs an AppleScript metadata-only permission trigger, then verifies native access. It does not read mail bodies, calendar notes, reminder notes, or message text."
-        : "This runs an AppleScript metadata-only permission trigger and returns explicit setup guidance. It does not read mail bodies, calendar notes, reminder notes, or message text."
+        ? "This runs an AppleScript metadata-only permission trigger, then verifies native access. It does not read mail bodies, calendar notes, reminder notes, note bodies, or message text."
+        : "This runs an AppleScript metadata-only permission trigger and returns explicit setup guidance. It does not read mail bodies, calendar notes, reminder notes, note bodies, or message text."
     };
   }
 
@@ -92,6 +92,14 @@ export function summarizeMessagesPermission(result: { chatCount: number; message
   return {
     chatCount: result.chatCount,
     messageCount: result.messageCount
+  };
+}
+
+export function summarizeNotesPermission(result: { accountCount: number; folderCount: number; noteCount: number }) {
+  return {
+    accountCount: result.accountCount,
+    folderCount: result.folderCount,
+    noteCount: result.noteCount
   };
 }
 

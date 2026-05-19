@@ -1,5 +1,5 @@
 export type WriteMode = "ask" | "direct";
-export type AppleServiceName = "mail" | "calendar" | "reminders" | "messages";
+export type AppleServiceName = "mail" | "calendar" | "reminders" | "messages" | "notes";
 
 export interface RuntimeConfig {
   writeMode: WriteMode;
@@ -15,7 +15,8 @@ const SERVICE_ENV_PREFIX: Record<AppleServiceName, string> = {
   mail: "APPLE_MAIL",
   calendar: "APPLE_CALENDAR",
   reminders: "APPLE_REMINDERS",
-  messages: "APPLE_MESSAGES"
+  messages: "APPLE_MESSAGES",
+  notes: "APPLE_NOTES"
 };
 
 function parsePositiveInt(value: string | undefined, fallback: number): number {

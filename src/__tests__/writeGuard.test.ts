@@ -10,6 +10,7 @@ describe("write guard", () => {
     expect(decideWrite({ writeMode: "ask" }, "calendar.create", true).allowed).toBe(true);
     expect(decideWrite({ writeMode: "ask" }, "reminders.create", true).allowed).toBe(true);
     expect(decideWrite({ writeMode: "ask" }, "messages.send", true).allowed).toBe(true);
+    expect(decideWrite({ writeMode: "ask" }, "notes.create", true).allowed).toBe(true);
   });
 
   it("allows writes in direct mode unless dry-run", () => {
@@ -22,6 +23,9 @@ describe("write guard", () => {
     );
     expect(decideWrite({ writeMode: "direct" }, "messages.send", false, true).reason).toBe(
       "messages.send dry run requested"
+    );
+    expect(decideWrite({ writeMode: "direct" }, "notes.delete", false, true).reason).toBe(
+      "notes.delete dry run requested"
     );
   });
 });

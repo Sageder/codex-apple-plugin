@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "apple-notes": {
+      "command": "node",
+      "cwd": ".",
+      "args": ["./dist/index.mjs"],
+      "env": {
+        "APPLE_NOTES_WRITE_MODE": "ask",
+        "APPLE_NOTES_MAX_BODY_CHARS": "12000",
+        "APPLE_NOTES_HELPER_TIMEOUT_MS": "60000"
+      }
+    }
+  }
+}

@@ -5,10 +5,13 @@ import type { MailService } from "../mail/mailService.js";
 import { registerMailTools } from "../mail/tools.js";
 import type { MessagesService } from "../messages/messagesService.js";
 import { registerMessagesTools } from "../messages/tools.js";
+import type { NotesService } from "../notes/notesService.js";
+import { registerNotesTools } from "../notes/tools.js";
 import {
   registerCalendarPermissionTool,
   registerMessagesPermissionTool,
   registerMailPermissionTool,
+  registerNotesPermissionTool,
   registerRemindersPermissionTool
 } from "../permissions/tools.js";
 import type { RequestServicePermissionArgs } from "../permissions/schemas.js";
@@ -53,4 +56,13 @@ export function registerAppleMessagesServerTools(
 ): void {
   registerMessagesPermissionTool(server, permissions);
   registerMessagesTools(server, messages);
+}
+
+export function registerAppleNotesServerTools(
+  server: McpServer,
+  notes: NotesService,
+  permissions: PermissionRequester
+): void {
+  registerNotesPermissionTool(server, permissions);
+  registerNotesTools(server, notes);
 }

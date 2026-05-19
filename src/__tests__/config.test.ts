@@ -53,4 +53,16 @@ describe("runtime config", () => {
       )
     ).toMatchObject({ messagesDatabasePath: "/tmp/messages-chat.db" });
   });
+
+  it("uses notes-specific write mode and body limits", () => {
+    expect(
+      getRuntimeConfig(
+        {
+          APPLE_NOTES_WRITE_MODE: "direct",
+          APPLE_NOTES_MAX_BODY_CHARS: "8000"
+        },
+        "notes"
+      )
+    ).toMatchObject({ writeMode: "direct", maxBodyChars: 8000 });
+  });
 });
