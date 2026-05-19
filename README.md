@@ -3,18 +3,6 @@
 Use Apple Mail, Apple Reminders, Apple Calendar, Apple Messages, and Apple
 Notes from local Codex plugins on macOS.
 
-This repository contains five repo-local Codex plugins:
-
-- `apple-mail`
-- `apple-reminders`
-- `apple-calendar`
-- `apple-messages`
-- `apple-notes`
-
-Each plugin exposes one MCP server and one Apple app surface. The TypeScript
-service code is shared in `src/`, while each plugin has its own manifest,
-skill, icon, MCP config, and bundled server in `plugins/<plugin>/dist`.
-
 <p align="center">
   <img src="plugins/apple-mail/assets/apple-mail.png" alt="Apple Mail" width="82" />
   &nbsp;&nbsp;&nbsp;
