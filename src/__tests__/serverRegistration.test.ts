@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   registerAppleCalendarServerTools,
   registerAppleMailServerTools,
+  registerAppleMessagesServerTools,
   registerAppleRemindersServerTools
 } from "../servers/register.js";
 
@@ -76,5 +77,21 @@ describe("split plugin server registrations", () => {
       "reminders_move"
     ]);
     expect(names.every((name) => name.startsWith("reminders_"))).toBe(true);
+  });
+
+  it("registers only Messages tools on the Apple Messages server", () => {
+    const { server, names } = fakeServer();
+
+    registerAppleMessagesServerTools(server, {} as never, { request: vi.fn() });
+
+    expect(names).toEqual([
+      "messages_request_permissions",
+      "messages_list_chats",
+      "messages_fetch_new",
+      "messages_search",
+      "messages_read",
+      "messages_send"
+    ]);
+    expect(names.every((name) => name.startsWith("messages_"))).toBe(true);
   });
 });

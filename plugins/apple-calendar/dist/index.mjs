@@ -31254,7 +31254,8 @@ var SwiftCalendarBridge = class {
 var SERVICE_ENV_PREFIX = {
   mail: "APPLE_MAIL",
   calendar: "APPLE_CALENDAR",
-  reminders: "APPLE_REMINDERS"
+  reminders: "APPLE_REMINDERS",
+  messages: "APPLE_MESSAGES"
 };
 function parsePositiveInt(value, fallback) {
   if (!value) {
@@ -31282,7 +31283,8 @@ function getRuntimeConfig(env = process.env, service) {
     retrievalCandidateLimit: parsePositiveInt(envValue(env, "RETRIEVAL_CANDIDATE_LIMIT", "mail"), 30),
     contextTopK: parsePositiveInt(envValue(env, "CONTEXT_TOP_K", "mail"), 5),
     helperTimeoutMs: parsePositiveInt(envValue(env, "HELPER_TIMEOUT_MS", service), 6e4),
-    defaultRemindersList: env.APPLE_REMINDERS_DEFAULT_LIST?.trim() || void 0
+    defaultRemindersList: env.APPLE_REMINDERS_DEFAULT_LIST?.trim() || void 0,
+    messagesDatabasePath: service === "messages" ? envValue(env, "DB_PATH", service)?.trim() || void 0 : void 0
   };
 }
 
@@ -31389,6 +31391,13 @@ function scriptForPermissionProbe(service) {
         '  return "{\\"listCount\\":" & listCount & "}"',
         "end tell"
       ].join("\n");
+    case "messages":
+      return [
+        'tell application "Messages"',
+        "  set serviceCount to count of services",
+        '  return "{\\"serviceCount\\":" & serviceCount & "}"',
+        "end tell"
+      ].join("\n");
   }
 }
 function parseProbeOutput(stdout) {
@@ -31418,6 +31427,8 @@ function sanitizeAppleScriptSummary(service, value) {
       return { calendarCount: numberField(value, "calendarCount") };
     case "reminders":
       return { listCount: numberField(value, "listCount") };
+    case "messages":
+      return { serviceCount: numberField(value, "serviceCount") };
   }
 }
 function numberField(value, key) {
@@ -31439,7 +31450,7 @@ var PermissionsService = class {
     return {
       ok: result.ok,
       result,
-      note: this.options.nativeProbe ? "This runs an AppleScript metadata-only permission trigger, then verifies native access. It does not read mail bodies, calendar notes, or reminder notes." : "This runs an AppleScript metadata-only permission trigger and returns explicit setup guidance. It does not read mail bodies, calendar notes, or reminder notes."
+      note: this.options.nativeProbe ? "This runs an AppleScript metadata-only permission trigger, then verifies native access. It does not read mail bodies, calendar notes, reminder notes, or message text." : "This runs an AppleScript metadata-only permission trigger and returns explicit setup guidance. It does not read mail bodies, calendar notes, reminder notes, or message text."
     };
   }
   async requestOne() {
@@ -31725,6 +31736,58 @@ var mailMoveSchema = mailWriteSchema.extend({
 });
 var mailUndoMoveSchema = external_exports.object({
   undoTokens: external_exports.array(external_exports.string()).min(1).max(50),
+  confirm: external_exports.boolean().optional(),
+  dryRun: external_exports.boolean().optional()
+}).strict();
+
+// src/messages/schemas.ts
+var optionalDate3 = external_exports.string().datetime().optional();
+var maxTextChars = external_exports.number().int().min(0).max(1e5).optional();
+var messagesServiceSchema = external_exports.enum(["iMessage", "SMS"]).optional();
+var messagesListChatsSchema = external_exports.object({
+  query: external_exports.string().optional().describe("Match chat display names, chat identifiers, or participant handles."),
+  participant: external_exports.string().optional().describe("Match a phone number, email address, or participant fragment."),
+  service: messagesServiceSchema,
+  limit: external_exports.number().int().positive().max(100).optional().default(20)
+}).strict();
+var messagesFetchNewSchema = external_exports.object({
+  since: optionalDate3,
+  before: optionalDate3,
+  participant: external_exports.string().optional().describe("Match a phone number, email address, or participant fragment."),
+  chatHandle: external_exports.string().optional().describe("Limit results to a chat handle returned by messages_list_chats."),
+  service: messagesServiceSchema,
+  unreadOnly: external_exports.boolean().optional().describe("Defaults to true unless includeSent is true."),
+  includeSent: external_exports.boolean().optional().default(false),
+  limit: external_exports.number().int().positive().max(100).optional().default(20),
+  maxTextChars
+}).strict();
+var messagesSearchSchema = external_exports.object({
+  query: external_exports.string().optional().describe("Search message text, chat display names, chat identifiers, and handles."),
+  participant: external_exports.string().optional().describe("Match a phone number, email address, or participant fragment."),
+  chatHandle: external_exports.string().optional().describe("Limit results to a chat handle returned by messages_list_chats."),
+  service: messagesServiceSchema,
+  direction: external_exports.enum(["all", "incoming", "outgoing"]).optional().default("all"),
+  unreadOnly: external_exports.boolean().optional().default(false),
+  since: optionalDate3,
+  before: optionalDate3,
+  limit: external_exports.number().int().positive().max(100).optional().default(20),
+  maxTextChars
+}).strict();
+var messagesReadSchema = external_exports.object({
+  handles: external_exports.array(external_exports.string()).min(1).max(50).optional(),
+  chatHandle: external_exports.string().optional().describe("Read recent messages from a chat handle returned by messages_list_chats."),
+  since: optionalDate3,
+  before: optionalDate3,
+  direction: external_exports.enum(["all", "incoming", "outgoing"]).optional().default("all"),
+  limit: external_exports.number().int().positive().max(100).optional().default(25),
+  maxTextChars
+}).strict().refine((value) => Boolean(value.handles?.length) !== Boolean(value.chatHandle), {
+  message: "Provide exactly one of handles or chatHandle."
+});
+var messagesSendSchema = external_exports.object({
+  recipient: external_exports.string().min(1).describe("Phone number or Apple ID email address."),
+  text: external_exports.string().min(1),
+  service: messagesServiceSchema,
   confirm: external_exports.boolean().optional(),
   dryRun: external_exports.boolean().optional()
 }).strict();

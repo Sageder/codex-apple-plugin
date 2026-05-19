@@ -3,11 +3,11 @@
   "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "Local Codex plugins for Apple Mail, Calendar, and Reminders workflows.",
+  "description": "Local Codex plugins for Apple Mail, Calendar, Reminders, and Messages workflows.",
   "scripts": {
     "build": "npm run clean:dist && tsc -p tsconfig.json && npm run build:mcp && npm run build:mail-helper && npm run build:calendar-helper && npm run build:reminders-helper",
-    "clean:dist": "rm -rf plugins/apple-mail/dist plugins/apple-calendar/dist plugins/apple-reminders/dist",
-    "build:mcp": "mkdir -p plugins/apple-mail/dist plugins/apple-calendar/dist plugins/apple-reminders/dist && esbuild src/servers/mail.ts --bundle --platform=node --format=esm --target=node18 --outfile=plugins/apple-mail/dist/index.mjs && esbuild src/servers/calendar.ts --bundle --platform=node --format=esm --target=node18 --outfile=plugins/apple-calendar/dist/index.mjs && esbuild src/servers/reminders.ts --bundle --platform=node --format=esm --target=node18 --outfile=plugins/apple-reminders/dist/index.mjs",
+    "clean:dist": "rm -rf plugins/apple-mail/dist plugins/apple-calendar/dist plugins/apple-reminders/dist plugins/apple-messages/dist",
+    "build:mcp": "mkdir -p plugins/apple-mail/dist plugins/apple-calendar/dist plugins/apple-reminders/dist plugins/apple-messages/dist && esbuild src/servers/mail.ts --bundle --platform=node --format=esm --target=node18 --outfile=plugins/apple-mail/dist/index.mjs && esbuild src/servers/calendar.ts --bundle --platform=node --format=esm --target=node18 --outfile=plugins/apple-calendar/dist/index.mjs && esbuild src/servers/reminders.ts --bundle --platform=node --format=esm --target=node18 --outfile=plugins/apple-reminders/dist/index.mjs && esbuild src/servers/messages.ts --bundle --platform=node --format=esm --target=node18 --outfile=plugins/apple-messages/dist/index.mjs",
     "build:mail-helper": "swift build --package-path swift && mkdir -p plugins/apple-mail/dist && cp swift/.build/debug/apple-mail-helper plugins/apple-mail/dist/apple-mail-helper",
     "build:calendar-helper": "mkdir -p plugins/apple-calendar/dist && xcrun swiftc -framework AppKit -framework EventKit -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __info_plist -Xlinker src/calendar/calendar-helper-info.plist src/calendar/calendarHelper.swift -o plugins/apple-calendar/dist/calendar-helper && codesign --force --sign - --entitlements src/eventkit-helper-entitlements.plist plugins/apple-calendar/dist/calendar-helper",
     "build:reminders-helper": "mkdir -p plugins/apple-reminders/dist && xcrun swiftc -framework EventKit -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __info_plist -Xlinker src/reminders/reminders-helper-info.plist src/reminders/remindersHelper.swift -o plugins/apple-reminders/dist/reminders-helper && codesign --force --sign - --entitlements src/eventkit-helper-entitlements.plist plugins/apple-reminders/dist/reminders-helper",
@@ -16,7 +16,8 @@
     "permissions:request": "npm run build && tsx scripts/request-permissions.ts",
     "smoke:mail": "tsx scripts/smoke-mail.ts",
     "smoke:calendar": "tsx scripts/smoke-calendar.ts",
-    "smoke:reminders": "tsx scripts/smoke-reminders.ts"
+    "smoke:reminders": "tsx scripts/smoke-reminders.ts",
+    "smoke:messages": "tsx scripts/smoke-messages.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",

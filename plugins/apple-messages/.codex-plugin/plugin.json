@@ -1,0 +1,36 @@
+{
+  "name": "apple-messages",
+  "version": "0.2.0",
+  "description": "Access Apple Messages from Codex on macOS.",
+  "author": {
+    "name": "Clemens Sageder",
+    "email": "local@example.invalid",
+    "url": "https://github.com/Sageder"
+  },
+  "homepage": "https://support.apple.com/messages",
+  "repository": "https://github.com/Sageder/codex-apple-plugin",
+  "license": "MIT",
+  "keywords": ["apple-messages", "messages", "imessage", "sms", "macos"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Apple Messages",
+    "shortDescription": "Use Apple Messages from Codex",
+    "longDescription": "List chats, fetch new or unread messages, search and read local Apple Messages history, and send iMessage or SMS messages through local macOS Messages. Reads use the local Messages database in read-only mode and sending is guarded by the configured write mode.",
+    "developerName": "Clemens Sageder",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "websiteURL": "https://support.apple.com/messages",
+    "privacyPolicyURL": "https://www.apple.com/legal/privacy/",
+    "termsOfServiceURL": "https://www.apple.com/legal/internet-services/terms/site.html",
+    "defaultPrompt": [
+      "Fetch my new messages",
+      "Search Apple Messages",
+      "Send an Apple Message"
+    ],
+    "brandColor": "#34C759",
+    "composerIcon": "./assets/apple-messages.png",
+    "logo": "./assets/apple-messages.png",
+    "screenshots": []
+  }
+}

@@ -12,7 +12,8 @@ export type WriteAction =
   | "reminders.update"
   | "reminders.complete"
   | "reminders.delete"
-  | "reminders.move";
+  | "reminders.move"
+  | "messages.send";
 
 export interface WriteDecision {
   allowed: boolean;

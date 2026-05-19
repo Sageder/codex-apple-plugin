@@ -42,4 +42,15 @@ describe("runtime config", () => {
       )
     ).toMatchObject({ retrievalCandidateLimit: 12, contextTopK: 4 });
   });
+
+  it("uses messages-specific database paths", () => {
+    expect(
+      getRuntimeConfig(
+        {
+          APPLE_MESSAGES_DB_PATH: "/tmp/messages-chat.db"
+        },
+        "messages"
+      )
+    ).toMatchObject({ messagesDatabasePath: "/tmp/messages-chat.db" });
+  });
 });

@@ -37,12 +37,16 @@ Run smoke scripts against local Apple apps:
 npm run smoke:mail
 npm run smoke:calendar
 npm run smoke:reminders
+npm run smoke:messages
 ```
 
 `npm run build` compiles the Swift package helper used by Mail and also builds
 `plugins/apple-reminders/dist/reminders-helper` from the Reminders Swift source.
 The Calendar helper is built from `src/calendar/calendarHelper.swift` into
 `plugins/apple-calendar/dist/calendar-helper`.
+The Messages plugin is TypeScript-only: it queries the local Messages database
+read-only through `sqlite3` and sends through Messages.app AppleScript behind
+the write guard.
 
 ## Repository Layout
 
@@ -67,6 +71,13 @@ plugins/apple-calendar/
   assets/                        Apple Calendar plugin icon
   skills/apple-calendar/SKILL.md
   dist/                          Built Calendar MCP server and helper
+
+plugins/apple-messages/
+  .codex-plugin/plugin.json      Apple Messages plugin metadata
+  .mcp.json                      Apple Messages MCP server config
+  assets/                        Apple Messages plugin icon
+  skills/apple-messages/SKILL.md
+  dist/                          Built Messages MCP server
 
 src/                             Shared TypeScript MCP services, helper sources, and tests
 scripts/                         Local permission and smoke scripts

@@ -56,6 +56,10 @@ describe("AppleScript permission bootstrap", () => {
     expect(scriptForPermissionProbe("reminders")).toContain('tell application "Reminders"');
     expect(scriptForPermissionProbe("reminders")).toContain("count of lists");
     expect(scriptForPermissionProbe("reminders")).not.toContain("body of");
+
+    expect(scriptForPermissionProbe("messages")).toContain('tell application "Messages"');
+    expect(scriptForPermissionProbe("messages")).toContain("count of services");
+    expect(scriptForPermissionProbe("messages")).not.toContain("text of");
   });
 
   it("runs osascript with the generated command and sanitizes output", async () => {

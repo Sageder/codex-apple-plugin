@@ -3,8 +3,11 @@ import type { CalendarService } from "../calendar/calendarService.js";
 import { registerCalendarTools } from "../calendar/tools.js";
 import type { MailService } from "../mail/mailService.js";
 import { registerMailTools } from "../mail/tools.js";
+import type { MessagesService } from "../messages/messagesService.js";
+import { registerMessagesTools } from "../messages/tools.js";
 import {
   registerCalendarPermissionTool,
+  registerMessagesPermissionTool,
   registerMailPermissionTool,
   registerRemindersPermissionTool
 } from "../permissions/tools.js";
@@ -41,4 +44,13 @@ export function registerAppleRemindersServerTools(
 ): void {
   registerRemindersPermissionTool(server, permissions);
   registerRemindersTools(server, reminders);
+}
+
+export function registerAppleMessagesServerTools(
+  server: McpServer,
+  messages: MessagesService,
+  permissions: PermissionRequester
+): void {
+  registerMessagesPermissionTool(server, permissions);
+  registerMessagesTools(server, messages);
 }

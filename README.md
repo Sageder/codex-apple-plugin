@@ -1,13 +1,14 @@
 # Apple Apps MCP Plugins for Codex
 
-Use Apple Mail, Apple Reminders, and Apple Calendar from local Codex plugins on
-macOS.
+Use Apple Mail, Apple Reminders, Apple Calendar, and Apple Messages from local
+Codex plugins on macOS.
 
-This repository contains three repo-local Codex plugins:
+This repository contains four repo-local Codex plugins:
 
 - `apple-mail`
 - `apple-reminders`
 - `apple-calendar`
+- `apple-messages`
 
 Each plugin exposes one MCP server and one Apple app surface. The TypeScript
 service code is shared in `src/`, while each plugin has its own manifest,
@@ -19,9 +20,11 @@ skill, icon, MCP config, and bundled server in `plugins/<plugin>/dist`.
   <img src="plugins/apple-reminders/assets/apple-reminders.png" alt="Apple Reminders" width="82" />
   &nbsp;&nbsp;&nbsp;
   <img src="plugins/apple-calendar/assets/apple-calendar.png" alt="Apple Calendar" width="82" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="plugins/apple-messages/assets/apple-messages.png" alt="Apple Messages" width="82" />
 </p>
 
-<p align="center"><strong>Mail</strong> · <strong>Reminders</strong> · <strong>Calendar</strong></p>
+<p align="center"><strong>Mail</strong> · <strong>Reminders</strong> · <strong>Calendar</strong> · <strong>Messages</strong></p>
 
 ## Features
 
@@ -31,17 +34,19 @@ skill, icon, MCP config, and bundled server in `plugins/<plugin>/dist`.
   or move reminders.
 - List calendars, search/read/show events, and create/update/delete Calendar
   events.
+- List Messages chats, fetch new/unread messages, search/read local iMessage
+  and SMS history, and send Messages.
 - Per-plugin write guard for mutating operations, with ask mode by default.
 - Live, ephemeral reads. The plugins do not build or store persistent local
-  mail, calendar, or reminders indexes.
+  mail, calendar, reminders, or messages indexes.
 
 ## Requirements
 
-- macOS with Apple Mail, Calendar, and Reminders available.
+- macOS with Apple Mail, Calendar, Reminders, and Messages available.
 - Node.js and npm.
 - Xcode Command Line Tools, including `xcrun`, Swift, and `codesign`.
 - Local app permissions granted when macOS prompts for Apple Events, Calendar,
-  or Reminders access.
+  Reminders, Messages, or Full Disk Access.
 
 ## Quick Start
 
@@ -55,10 +60,11 @@ npm run build
 npm run permissions:request
 ```
 
-`npm run permissions:request` builds the three plugins, runs metadata-only
+`npm run permissions:request` builds the plugins, runs metadata-only
 AppleScript probes to trigger OS permission prompts, verifies native access for
-Mail and Reminders, and returns explicit Full Access guidance for Calendar. It
-prints counts/status only, not mail bodies, calendar notes, or reminder notes.
+Mail, Reminders, and Messages, and returns explicit Full Access guidance for
+Calendar. It prints counts/status only, not mail bodies, calendar notes,
+reminder notes, or message text.
 
 For manual MCP client setup, point the client at the desired bundled server:
 
@@ -80,6 +86,7 @@ The other servers are:
 
 - `plugins/apple-reminders/dist/index.mjs`
 - `plugins/apple-calendar/dist/index.mjs`
+- `plugins/apple-messages/dist/index.mjs`
 
 To add this repository as a Codex plugin marketplace, use:
 
@@ -87,7 +94,7 @@ To add this repository as a Codex plugin marketplace, use:
 - Git ref: `main`
 - Sparse paths: leave empty, or use `.agents/plugins/marketplace.json`,
   `plugins/apple-mail`, `plugins/apple-reminders`, and
-  `plugins/apple-calendar`
+  `plugins/apple-calendar`, and `plugins/apple-messages`
 
 ## Permission Model
 
@@ -96,21 +103,27 @@ Each plugin has a setup tool:
 - `mail_request_permissions`
 - `reminders_request_permissions`
 - `calendar_request_permissions`
+- `messages_request_permissions`
 
 The setup flow first uses AppleScript for a minimal metadata probe. Mail and
-Reminders then run native permission/access probes; Calendar returns explicit
-Full Access setup guidance instead of running a native EventKit probe. This is
-intentionally a permission trigger and proof step, not an AppleScript replacement
-backend.
+Reminders then run native permission/access probes; Messages verifies read-only
+database access; Calendar returns explicit Full Access setup guidance instead of
+running a native EventKit probe. This is intentionally a permission trigger and
+proof step, not an AppleScript replacement backend.
 
 The AppleScript probes only count accounts/mailboxes, reminder lists, or
-calendars. They do not read message bodies, event notes, or reminder notes.
+calendars, or Messages services. They do not read mail bodies, event notes,
+reminder notes, or message text.
 
 Calendar and Reminders access are built as direct command-line helpers.
 Calendar setup intentionally does not run a native EventKit probe. After the
 AppleScript permission prompt is accepted, explicitly open System Settings >
 Privacy & Security > Calendars and enable Full Access for Codex or the
 `apple-calendar` helper entry shown by macOS before using Calendar tools.
+
+Messages reads use `~/Library/Messages/chat.db` in read-only mode through
+`sqlite3`. macOS protects that database, so grant Full Disk Access to Codex or
+the terminal/app that launches the MCP server before using read tools.
 
 ## Safety Model
 
@@ -121,6 +134,7 @@ Writes are controlled per plugin:
 | Apple Mail | `APPLE_MAIL_WRITE_MODE` | `ask` or `direct` |
 | Apple Reminders | `APPLE_REMINDERS_WRITE_MODE` | `ask` or `direct` |
 | Apple Calendar | `APPLE_CALENDAR_WRITE_MODE` | `ask` or `direct` |
+| Apple Messages | `APPLE_MESSAGES_WRITE_MODE` | `ask` or `direct` |
 
 In ask mode, mutating tools do not write unless the request includes
 `confirm: true`. Without confirmation they return a preview or target summary
@@ -140,6 +154,8 @@ Important delete semantics:
 `mail_compose` is intentionally outside the write guard because it only opens a
 visible compose window or creates a draft.
 
+`messages_send` is guarded. Messages read tools are read-only database queries.
+
 ## Configuration
 
 | Variable | Default | Description |
@@ -147,14 +163,18 @@ visible compose window or creates a draft.
 | `APPLE_MAIL_WRITE_MODE` | `ask` | Mail write mode. |
 | `APPLE_REMINDERS_WRITE_MODE` | `ask` | Reminders write mode. |
 | `APPLE_CALENDAR_WRITE_MODE` | `ask` | Calendar write mode. |
+| `APPLE_MESSAGES_WRITE_MODE` | `ask` | Messages send mode. |
 | `APPLE_MAIL_MAX_BODY_CHARS` | `12000` | Maximum Mail body characters returned by read-style tools. |
 | `APPLE_REMINDERS_MAX_BODY_CHARS` | `12000` | Maximum Reminders notes characters returned by read-style tools. |
 | `APPLE_CALENDAR_MAX_BODY_CHARS` | `12000` | Maximum Calendar notes characters returned by read-style tools. |
+| `APPLE_MESSAGES_MAX_BODY_CHARS` | `12000` | Maximum Messages text characters returned by read-style tools. |
 | `APPLE_MAIL_RETRIEVAL_CANDIDATE_LIMIT` | `30` | Default Mail retrieval candidate count. |
 | `APPLE_MAIL_CONTEXT_TOP_K` | `5` | Default Mail retrieval snippet count. |
 | `APPLE_MAIL_HELPER_TIMEOUT_MS` | `60000` | Mail helper and AppleScript timeout in milliseconds. |
 | `APPLE_REMINDERS_HELPER_TIMEOUT_MS` | `60000` | Reminders helper and AppleScript timeout in milliseconds. |
 | `APPLE_CALENDAR_HELPER_TIMEOUT_MS` | `60000` | Calendar helper and AppleScript timeout in milliseconds. |
+| `APPLE_MESSAGES_HELPER_TIMEOUT_MS` | `60000` | Messages sqlite and AppleScript timeout in milliseconds. |
+| `APPLE_MESSAGES_DB_PATH` | `~/Library/Messages/chat.db` | Optional Messages database path override. |
 | `APPLE_REMINDERS_DEFAULT_LIST` | unset | Optional default Reminders list name or identifier. |
 
 ## Tools
@@ -206,10 +226,19 @@ upcoming reminder exists.
 - `calendar_delete_event`
 - `calendar_show_event`
 
+### Messages
+
+- `messages_request_permissions`
+- `messages_list_chats`
+- `messages_fetch_new`
+- `messages_search`
+- `messages_read`
+- `messages_send`
+
 ## Privacy
 
 All servers run locally and read from local Apple apps. They do not persist mail
-bodies, calendar notes, reminder notes, or search indexes.
+bodies, calendar notes, reminder notes, message text, or search indexes.
 
 MCP clients can still display or log tool output. Keep read limits conservative
 and avoid sharing generated logs when they may contain personal content.

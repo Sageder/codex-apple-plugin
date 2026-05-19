@@ -37,6 +37,16 @@ export function registerRemindersPermissionTool(server: McpServer, permissions: 
   );
 }
 
+export function registerMessagesPermissionTool(server: McpServer, permissions: PermissionRequester): void {
+  registerPermissionTool(
+    server,
+    "messages_request_permissions",
+    "Request Apple Messages permissions",
+    "First-run setup tool that triggers macOS Apple Messages Automation permission prompts through a metadata-only AppleScript probe, then verifies read-only Messages database access.",
+    permissions
+  );
+}
+
 function registerPermissionTool(
   server: McpServer,
   name: string,

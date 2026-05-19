@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "apple-messages": {
+      "command": "node",
+      "cwd": ".",
+      "args": ["./dist/index.mjs"],
+      "env": {
+        "APPLE_MESSAGES_WRITE_MODE": "ask",
+        "APPLE_MESSAGES_MAX_BODY_CHARS": "12000",
+        "APPLE_MESSAGES_HELPER_TIMEOUT_MS": "60000",
+        "APPLE_MESSAGES_DB_PATH": ""
+      }
+    }
+  }
+}

@@ -2980,7 +2980,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve2.call(this, root, ref);
+      let _sch = resolve.call(this, root, ref);
       if (_sch === void 0) {
         const schema = (_a3 = root.localRefs) === null || _a3 === void 0 ? void 0 : _a3[ref];
         const { schemaId } = this.opts;
@@ -3007,7 +3007,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve2(root, ref) {
+    function resolve(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -3638,7 +3638,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve2(baseURI, relativeURI, options) {
+    function resolve(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const resolved = resolveComponent(parse3(baseURI, schemelessOptions), parse3(relativeURI, schemelessOptions), schemelessOptions, true);
       schemelessOptions.skipEscape = true;
@@ -3896,7 +3896,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve: resolve2,
+      resolve,
       resolveComponent,
       equal,
       serialize,
@@ -28827,7 +28827,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-        await new Promise((resolve2) => setTimeout(resolve2, pollInterval));
+        await new Promise((resolve) => setTimeout(resolve, pollInterval));
         options?.signal?.throwIfAborted();
       }
     } catch (error51) {
@@ -28844,7 +28844,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-    return new Promise((resolve2, reject) => {
+    return new Promise((resolve, reject) => {
       const earlyReject = (error51) => {
         reject(error51);
       };
@@ -28922,7 +28922,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve2(parseResult.data);
+            resolve(parseResult.data);
           }
         } catch (error51) {
           reject(error51);
@@ -29152,8 +29152,8 @@ var Protocol = class {
    */
   async _clearTaskQueue(taskId, sessionId) {
     if (this._taskMessageQueue) {
-      const messages = await this._taskMessageQueue.dequeueAll(taskId, sessionId);
-      for (const message of messages) {
+      const messages2 = await this._taskMessageQueue.dequeueAll(taskId, sessionId);
+      for (const message of messages2) {
         if (message.type === "request" && isJSONRPCRequest(message.message)) {
           const requestId = message.message.id;
           const resolver = this._requestResolvers.get(requestId);
@@ -29183,12 +29183,12 @@ var Protocol = class {
       }
     } catch {
     }
-    return new Promise((resolve2, reject) => {
+    return new Promise((resolve, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve2, interval);
+      const timeoutId = setTimeout(resolve, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -30288,7 +30288,7 @@ var McpServer = class {
     let task = createTaskResult.task;
     const pollInterval = task.pollInterval ?? 5e3;
     while (task.status !== "completed" && task.status !== "failed" && task.status !== "cancelled") {
-      await new Promise((resolve2) => setTimeout(resolve2, pollInterval));
+      await new Promise((resolve) => setTimeout(resolve, pollInterval));
       const updatedTask = await extra.taskStore.getTask(taskId);
       if (!updatedTask) {
         throw new McpError(ErrorCode.InternalError, `Task ${taskId} not found during polling`);
@@ -30937,12 +30937,12 @@ var StdioServerTransport = class {
     this.onclose?.();
   }
   send(message) {
-    return new Promise((resolve2) => {
+    return new Promise((resolve) => {
       const json2 = serializeMessage(message);
       if (this._stdout.write(json2)) {
-        resolve2();
+        resolve();
       } else {
-        this._stdout.once("drain", resolve2);
+        this._stdout.once("drain", resolve);
       }
     });
   }
@@ -31013,347 +31013,557 @@ function actionLabel(action) {
   return action;
 }
 
-// src/mail/handle.ts
-function encodeMessageHandle(payload) {
+// src/messages/handle.ts
+function encodeMessagesChatHandle(payload) {
   return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
 }
-function decodeMessageHandle(handle) {
-  const decoded = JSON.parse(Buffer.from(handle, "base64url").toString("utf8"));
-  if (!decoded.account || !decoded.mailbox || typeof decoded.id !== "number") {
-    throw new Error("Invalid mail message handle");
+function decodeMessagesChatHandle(handle) {
+  try {
+    const decoded = JSON.parse(Buffer.from(handle, "base64url").toString("utf8"));
+    if (typeof decoded.chatId !== "number" || !decoded.guid) {
+      throw new Error("Invalid Apple Messages chat handle");
+    }
+    return {
+      chatId: decoded.chatId,
+      guid: decoded.guid
+    };
+  } catch {
+    throw new Error("Invalid Apple Messages chat handle");
   }
-  return decoded;
 }
-function encodeUndoToken(payload) {
+function encodeMessagesMessageHandle(payload) {
   return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
 }
-function decodeUndoToken(token) {
-  const decoded = JSON.parse(Buffer.from(token, "base64url").toString("utf8"));
-  if (!decoded.account || !decoded.fromMailbox || !decoded.toMailbox || typeof decoded.id !== "number") {
-    throw new Error("Invalid mail undo token");
+function decodeMessagesMessageHandle(handle) {
+  try {
+    const decoded = JSON.parse(Buffer.from(handle, "base64url").toString("utf8"));
+    if (typeof decoded.messageId !== "number" || !decoded.guid) {
+      throw new Error("Invalid Apple Messages message handle");
+    }
+    return {
+      messageId: decoded.messageId,
+      guid: decoded.guid,
+      chatId: typeof decoded.chatId === "number" ? decoded.chatId : void 0
+    };
+  } catch {
+    throw new Error("Invalid Apple Messages message handle");
   }
-  return decoded;
 }
 
-// src/mail/retrieval.ts
-var stopwords = /* @__PURE__ */ new Set([
-  "a",
-  "an",
-  "and",
-  "are",
-  "as",
-  "at",
-  "be",
-  "by",
-  "for",
-  "from",
-  "i",
-  "in",
-  "is",
-  "it",
-  "of",
-  "on",
-  "or",
-  "that",
-  "the",
-  "to",
-  "with",
-  "you"
-]);
-function tokenize(value) {
-  return value.toLowerCase().split(/[^a-z0-9_@.+-]+/i).map((token) => token.trim()).filter((token) => token.length > 1 && !stopwords.has(token));
-}
-function scoreSummary(message, query) {
-  const terms = tokenize(query);
-  if (terms.length === 0) {
-    return 0;
-  }
-  const subject = message.subject.toLowerCase();
-  const sender = message.sender.toLowerCase();
-  const recipients = message.recipients.map((recipient) => `${recipient.name} ${recipient.address}`.toLowerCase()).join(" ");
-  const mailbox = message.mailbox.toLowerCase();
-  return terms.reduce((score, term) => {
-    let next = score;
-    if (subject.includes(term)) next += 5;
-    if (sender.includes(term)) next += 3;
-    if (recipients.includes(term)) next += 4;
-    if (mailbox.includes(term)) next += 1;
-    return next;
-  }, 0);
-}
-function chunkText(content, maxChars = 1200) {
-  const clean = content.replace(/\r/g, "").replace(/[ \t]+\n/g, "\n").trim();
-  if (!clean) {
-    return [];
-  }
-  const paragraphs = clean.split(/\n{2,}/);
-  const chunks = [];
-  let current = "";
-  for (const paragraph of paragraphs) {
-    const normalized = paragraph.replace(/\s+/g, " ").trim();
-    if (!normalized) {
-      continue;
-    }
-    if ((current + " " + normalized).trim().length > maxChars && current) {
-      chunks.push(current);
-      current = "";
-    }
-    if (normalized.length > maxChars) {
-      for (let index = 0; index < normalized.length; index += maxChars) {
-        chunks.push(normalized.slice(index, index + maxChars));
-      }
-      continue;
-    }
-    current = (current + " " + normalized).trim();
-  }
-  if (current) {
-    chunks.push(current);
-  }
-  return chunks;
-}
-function rankContext(messages, query, topK) {
-  const terms = tokenize(query);
-  const snippets = [];
-  for (const message of messages) {
-    const baseScore = scoreSummary(message, query);
-    const chunks = chunkText(message.content);
-    for (const chunk of chunks.length ? chunks : [""]) {
-      const lowerChunk = chunk.toLowerCase();
-      const bodyScore = terms.reduce((score2, term) => score2 + occurrences(lowerChunk, term), 0);
-      const score = baseScore + bodyScore;
-      snippets.push({
-        handle: message.handle,
-        subject: message.subject,
-        sender: message.sender,
-        recipients: message.recipients.map((recipient) => recipient.name || recipient.address).filter(Boolean),
-        dateReceived: message.dateReceived,
-        dateSent: message.dateSent,
-        mailbox: message.mailbox,
-        score,
-        reason: buildReason({ baseScore, bodyScore, matchedTerms: terms.filter((term) => lowerChunk.includes(term)) }),
-        snippet: chunk.slice(0, 1200)
-      });
-    }
-  }
-  return snippets.filter((snippet) => snippet.score > 0 || terms.length === 0).sort((a, b) => b.score - a.score).slice(0, topK);
-}
-function occurrences(value, term) {
-  let count = 0;
-  let index = value.indexOf(term);
-  while (index !== -1) {
-    count += 1;
-    index = value.indexOf(term, index + term.length);
-  }
-  return count;
-}
-function buildReason(input) {
-  const reasons = [];
-  if (input.baseScore > 0) reasons.push("metadata matched");
-  if (input.bodyScore > 0) reasons.push(`body matched ${input.matchedTerms.slice(0, 6).join(", ")}`);
-  return reasons.length ? reasons.join("; ") : "recent candidate";
-}
-
-// src/mail/mailService.ts
-var MailService = class {
-  constructor(bridge2, config3) {
-    this.bridge = bridge2;
+// src/messages/messagesService.ts
+var MessagesService = class {
+  constructor(store, sender, config3) {
+    this.store = store;
+    this.sender = sender;
     this.config = config3;
   }
-  bridge;
+  store;
+  sender;
   config;
-  async listAccounts() {
-    const accounts = await this.bridge.call("mail.listAccounts");
-    return { accounts };
+  async requestAccess() {
+    return this.store.requestAccess();
   }
-  async requestPermission() {
-    return this.bridge.call("mail.requestPermission");
+  async listChats(args) {
+    const chats = await this.store.listChats(args);
+    return { chats: chats.map(encodeChat) };
   }
-  async listMailboxes() {
-    return this.bridge.call("mail.listMailboxes");
+  async fetchNew(args) {
+    const messages2 = await this.store.fetchNew({
+      ...args,
+      chatHandle: args.chatHandle ? decodeMessagesChatHandle(args.chatHandle) : void 0,
+      maxTextChars: args.maxTextChars ?? this.config.maxBodyChars
+    });
+    return { messages: messages2.map(encodeMessage) };
   }
   async search(args) {
-    const input = {
-      query: args.query,
-      subject: args.subject,
-      account: args.account,
-      mailbox: args.mailbox,
-      scope: args.scope,
-      sender: args.sender,
-      recipient: args.recipient,
-      participant: args.participant,
-      unreadOnly: args.unreadOnly,
-      since: args.since,
-      before: args.before,
-      includeTrash: args.includeTrash,
-      limit: args.limit ?? 20,
-      maxScanPerMailbox: args.maxScanPerMailbox ?? 200
-    };
-    const raw = await this.bridge.call("mail.search", input);
-    return {
-      messages: raw.map(encodeSummary).sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-    };
-  }
-  async retrieveContext(args) {
-    const candidateLimit = args.limit ?? this.config.retrievalCandidateLimit;
-    const search = await this.search({ ...args, limit: candidateLimit });
-    const ranked = search.messages.map((message) => ({ message, score: scoreSummary(message, args.query ?? "") + (message.score ?? 0) })).sort((a, b) => b.score - a.score).slice(0, candidateLimit).map((entry) => entry.message);
-    const bodies = ranked.length ? await this.read({
-      handles: ranked.map((message) => message.handle),
-      maxBodyChars: args.maxBodyChars ?? this.config.maxBodyChars
-    }) : { messages: [] };
-    return {
-      query: args.query ?? "",
-      candidates: search.messages.length,
-      snippets: rankContext(bodies.messages, args.query ?? "", args.topK ?? this.config.contextTopK)
-    };
+    const messages2 = await this.store.search({
+      ...args,
+      chatHandle: args.chatHandle ? decodeMessagesChatHandle(args.chatHandle) : void 0,
+      maxTextChars: args.maxTextChars ?? this.config.maxBodyChars
+    });
+    return { messages: messages2.map(encodeMessage) };
   }
   async read(args) {
-    const rawHandles = args.handles.map(decodeMessageHandle);
-    const raw = await this.bridge.call("mail.read", {
-      handles: rawHandles,
-      maxBodyChars: args.maxBodyChars ?? this.config.maxBodyChars
-    });
-    return { messages: raw.map(encodeBody) };
-  }
-  async compose(args) {
-    return this.bridge.call("mail.compose", {
+    const messages2 = await this.store.read({
       ...args,
-      cc: args.cc ?? [],
-      bcc: args.bcc ?? [],
-      visible: args.visible ?? true
+      handles: args.handles?.map(decodeMessagesMessageHandle),
+      chatHandle: args.chatHandle ? decodeMessagesChatHandle(args.chatHandle) : void 0,
+      maxTextChars: args.maxTextChars ?? this.config.maxBodyChars
     });
+    return { messages: messages2.map(encodeMessage) };
   }
   async send(args) {
-    const decision = decideWrite(this.config, "mail.send", args.confirm, args.dryRun);
-    if (!decision.allowed) {
-      return { mode: decision.mode, allowed: false, sent: false, preview: previewMessage(args), reason: decision.reason };
-    }
-    return this.bridge.call("mail.send", {
-      ...args,
-      cc: args.cc ?? [],
-      bcc: args.bcc ?? []
-    });
-  }
-  archive(args) {
-    return this.move({ ...args, targetRole: "archive" }, "mail.archive");
-  }
-  delete(args) {
-    return this.move({ ...args, targetRole: "trash" }, "mail.delete");
-  }
-  moveToJunk(args) {
-    return this.move({ ...args, targetRole: "junk" }, "mail.move");
-  }
-  async move(args, action = "mail.move") {
-    const decision = decideWrite(this.config, action, args.confirm, args.dryRun);
-    const decoded = args.handles.map(decodeMessageHandle);
+    const decision = decideWrite(this.config, "messages.send", args.confirm, args.dryRun);
     if (!decision.allowed) {
       return {
         mode: decision.mode,
         allowed: false,
-        moved: false,
-        targetRole: args.targetRole,
-        targetMailbox: args.targetMailbox,
-        count: decoded.length,
-        targets: decoded,
+        sent: false,
+        preview: {
+          recipient: args.recipient,
+          service: args.service,
+          textChars: args.text.length
+        },
         reason: decision.reason
       };
     }
-    const result = await this.bridge.call("mail.move", {
-      handles: decoded,
-      role: args.targetRole,
-      targetRole: args.targetRole,
-      targetMailbox: args.targetMailbox
+    return this.sender.send({
+      recipient: args.recipient,
+      text: args.text,
+      service: args.service
     });
-    return {
-      ...result,
-      moved: result.moved.map((item) => encodeMovedItem(item, action))
-    };
-  }
-  async undoMove(args) {
-    const decision = decideWrite(this.config, "mail.move", args.confirm, args.dryRun);
-    const tokens = args.undoTokens.map(decodeUndoToken);
-    const handles = tokens.map((token) => ({
-      account: token.account,
-      mailbox: token.toMailbox,
-      id: token.id,
-      messageId: token.messageId
-    }));
-    if (!decision.allowed) {
-      return {
-        mode: decision.mode,
-        allowed: false,
-        moved: false,
-        count: tokens.length,
-        targets: tokens,
-        reason: decision.reason
-      };
-    }
-    const moved = [];
-    for (let index = 0; index < tokens.length; index += 1) {
-      const token = tokens[index];
-      const result = await this.bridge.call("mail.move", {
-        handles: [handles[index]],
-        targetMailbox: token.fromMailbox
-      });
-      moved.push(...result.moved.map((item) => encodeMovedItem(item, "mail.move")));
-    }
-    return { moved };
   }
 };
-function encodeSummary(raw) {
+function encodeChat(raw) {
   return {
     ...raw,
-    handle: encodeMessageHandle(raw.handle)
+    handle: encodeMessagesChatHandle(raw.handle)
   };
 }
-function encodeBody(raw) {
+function encodeMessage(raw) {
   return {
     ...raw,
-    handle: encodeMessageHandle(raw.handle)
+    handle: encodeMessagesMessageHandle(raw.handle),
+    chatHandle: raw.chatHandle ? encodeMessagesChatHandle(raw.chatHandle) : void 0
   };
 }
-function previewMessage(args) {
+
+// src/messages/sender.ts
+import { spawn } from "node:child_process";
+var MessagesSenderError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "MessagesSenderError";
+  }
+};
+var MessagesAppleScriptSender = class {
+  constructor(timeoutMs) {
+    this.timeoutMs = timeoutMs;
+  }
+  timeoutMs;
+  send(args) {
+    const script = sendScript(args);
+    return new Promise((resolve, reject) => {
+      const child = spawn("/usr/bin/osascript", [], {
+        stdio: ["pipe", "pipe", "pipe"]
+      });
+      let stdout = "";
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        child.kill("SIGTERM");
+        reject(new MessagesSenderError(`Apple Messages send timed out after ${this.timeoutMs}ms`));
+      }, this.timeoutMs);
+      child.stdout.setEncoding("utf8");
+      child.stderr.setEncoding("utf8");
+      child.stdout.on("data", (chunk) => {
+        stdout += chunk;
+      });
+      child.on("error", (error51) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        clearTimeout(timer);
+        reject(new MessagesSenderError(`Failed to start Apple Messages send script: ${error51.message}`));
+      });
+      child.on("close", (code) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        clearTimeout(timer);
+        if (code !== 0) {
+          reject(
+            new MessagesSenderError(
+              "Apple Messages send failed. Ensure Messages is signed in and Codex has Automation access to Messages."
+            )
+          );
+          return;
+        }
+        try {
+          resolve(JSON.parse(stdout.trim()));
+        } catch (error51) {
+          reject(
+            new MessagesSenderError(
+              `Apple Messages send returned invalid JSON: ${error51 instanceof Error ? error51.message : String(error51)}`
+            )
+          );
+        }
+      });
+      child.stdin.end(script);
+    });
+  }
+};
+function sendScript(args) {
+  const service = args.service ?? "";
+  return [
+    `set targetRecipient to ${appleScriptString(args.recipient)}`,
+    `set messageText to ${appleScriptString(args.text)}`,
+    `set preferredServiceType to ${appleScriptString(service)}`,
+    'tell application "Messages"',
+    "  set targetService to missing value",
+    '  if preferredServiceType is not "" then',
+    "    repeat with candidateService in services",
+    "      if (service type of candidateService as text) is preferredServiceType then",
+    "        set targetService to candidateService",
+    "        exit repeat",
+    "      end if",
+    "    end repeat",
+    "  end if",
+    "  if targetService is missing value then",
+    "    repeat with candidateService in services",
+    '      if (service type of candidateService as text) is "iMessage" then',
+    "        set targetService to candidateService",
+    "        exit repeat",
+    "      end if",
+    "    end repeat",
+    "  end if",
+    "  if targetService is missing value then set targetService to first service",
+    "  set chosenServiceType to service type of targetService as text",
+    "  set targetBuddy to buddy targetRecipient of targetService",
+    "  send messageText to targetBuddy",
+    "end tell",
+    `return "{\\"sent\\":true,\\"recipient\\":${jsonStringFragment(args.recipient)},\\"service\\":\\"" & chosenServiceType & "\\",\\"textChars\\":${args.text.length}}"`
+  ].join("\n");
+}
+function appleScriptString(value) {
+  const normalized = value.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const parts = normalized.split("\n").map((part) => `"${part.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`);
+  return parts.join(" & linefeed & ");
+}
+function jsonStringFragment(value) {
+  return JSON.stringify(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+// src/messages/sqliteStore.ts
+import { spawn as spawn2 } from "node:child_process";
+import { homedir } from "node:os";
+import { join } from "node:path";
+var MessagesDatabaseError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "MessagesDatabaseError";
+  }
+};
+var SqliteMessagesStore = class {
+  constructor(options) {
+    this.options = options;
+  }
+  options;
+  async requestAccess() {
+    const rows = await this.queryJson(
+      "SELECT (SELECT count(*) FROM chat) AS chatCount, (SELECT count(*) FROM message) AS messageCount"
+    );
+    const first = rows[0] ?? { chatCount: 0, messageCount: 0 };
+    return {
+      chatCount: Number(first.chatCount) || 0,
+      messageCount: Number(first.messageCount) || 0
+    };
+  }
+  async listChats(args) {
+    const where = chatWhere(args);
+    const limit = clampLimit(args.limit, 20);
+    const rows = await this.queryJson([
+      "SELECT",
+      "  c.ROWID AS chatId,",
+      "  c.guid AS guid,",
+      "  c.chat_identifier AS chatIdentifier,",
+      "  c.display_name AS displayName,",
+      "  c.service_name AS serviceName,",
+      "  (SELECT group_concat(h.id, ', ') FROM handle h JOIN chat_handle_join chj ON chj.handle_id = h.ROWID WHERE chj.chat_id = c.ROWID) AS participants,",
+      "  (SELECT count(*) FROM chat_handle_join chj WHERE chj.chat_id = c.ROWID) AS participantCount,",
+      "  (SELECT count(*) FROM chat_message_join cmj WHERE cmj.chat_id = c.ROWID) AS messageCount,",
+      "  (SELECT count(*) FROM message m JOIN chat_message_join cmj ON cmj.message_id = m.ROWID WHERE cmj.chat_id = c.ROWID AND m.is_from_me = 0 AND coalesce(m.is_read, 0) = 0) AS unreadCount,",
+      "  (SELECT max(m.date) FROM message m JOIN chat_message_join cmj ON cmj.message_id = m.ROWID WHERE cmj.chat_id = c.ROWID) AS lastDateRaw",
+      "FROM chat c",
+      where,
+      "ORDER BY lastDateRaw DESC",
+      `LIMIT ${limit}`
+    ].join("\n"));
+    return rows.map(chatRow);
+  }
+  async fetchNew(args) {
+    return this.messages({
+      ...args,
+      direction: args.includeSent ? "all" : "incoming",
+      unreadOnly: args.unreadOnly ?? !args.includeSent
+    });
+  }
+  async search(args) {
+    return this.messages(args);
+  }
+  async read(args) {
+    return this.messages(args);
+  }
+  async messages(args) {
+    const maxTextChars2 = Math.max(0, args.maxTextChars ?? 12e3);
+    const rows = await this.queryJson([
+      "SELECT",
+      "  m.ROWID AS messageId,",
+      "  m.guid AS guid,",
+      "  c.ROWID AS chatId,",
+      "  c.guid AS chatGuid,",
+      "  c.chat_identifier AS chatIdentifier,",
+      "  c.display_name AS displayName,",
+      "  coalesce(m.service, c.service_name) AS service,",
+      "  h.id AS sender,",
+      "  m.is_from_me AS isFromMe,",
+      "  m.date AS dateRaw,",
+      textSelect(maxTextChars2),
+      "  length(coalesce(m.text, '')) AS textChars,",
+      "  coalesce(m.cache_has_attachments, 0) AS hasAttachments,",
+      "  (SELECT count(*) FROM message_attachment_join maj WHERE maj.message_id = m.ROWID) AS attachmentCount",
+      "FROM message m",
+      "LEFT JOIN handle h ON h.ROWID = m.handle_id",
+      "LEFT JOIN chat_message_join cmj ON cmj.message_id = m.ROWID",
+      "LEFT JOIN chat c ON c.ROWID = cmj.chat_id",
+      messageWhere(args),
+      "ORDER BY m.date DESC",
+      `LIMIT ${clampLimit(args.limit, 25)}`
+    ].join("\n"));
+    return rows.map((row) => messageRow(row, maxTextChars2));
+  }
+  queryJson(sql) {
+    return new Promise((resolve, reject) => {
+      const child = spawn2("sqlite3", ["-readonly", "-json", this.dbPath(), sql], {
+        stdio: ["ignore", "pipe", "pipe"]
+      });
+      let stdout = "";
+      let stderr = "";
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        child.kill("SIGTERM");
+        reject(new MessagesDatabaseError(`Apple Messages database query timed out after ${this.options.timeoutMs}ms`));
+      }, this.options.timeoutMs);
+      child.stdout.setEncoding("utf8");
+      child.stderr.setEncoding("utf8");
+      child.stdout.on("data", (chunk) => {
+        stdout += chunk;
+      });
+      child.stderr.on("data", (chunk) => {
+        stderr += chunk;
+      });
+      child.on("error", (error51) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        clearTimeout(timer);
+        reject(new MessagesDatabaseError(`Failed to start sqlite3 for Apple Messages: ${error51.message}`));
+      });
+      child.on("close", (code) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        clearTimeout(timer);
+        if (code !== 0) {
+          reject(new MessagesDatabaseError(databaseFailureMessage(stderr)));
+          return;
+        }
+        try {
+          const trimmed = stdout.trim();
+          resolve(trimmed ? JSON.parse(trimmed) : []);
+        } catch (error51) {
+          reject(
+            new MessagesDatabaseError(
+              `Apple Messages database returned invalid JSON: ${error51 instanceof Error ? error51.message : String(error51)}`
+            )
+          );
+        }
+      });
+    });
+  }
+  dbPath() {
+    return this.options.dbPath?.trim() || join(homedir(), "Library", "Messages", "chat.db");
+  }
+};
+function chatWhere(args) {
+  const clauses = [];
+  if (args.service) {
+    clauses.push(`c.service_name = ${sqlString(args.service)}`);
+  }
+  if (args.participant) {
+    clauses.push(chatParticipantPredicate(args.participant));
+  }
+  if (args.query) {
+    const like = likeString(args.query);
+    clauses.push(
+      [
+        "(",
+        `lower(coalesce(c.display_name, '')) LIKE ${like} ESCAPE '\\'`,
+        `OR lower(coalesce(c.chat_identifier, '')) LIKE ${like} ESCAPE '\\'`,
+        `OR EXISTS (SELECT 1 FROM handle h JOIN chat_handle_join chj ON chj.handle_id = h.ROWID WHERE chj.chat_id = c.ROWID AND lower(coalesce(h.id, '')) LIKE ${like} ESCAPE '\\')`,
+        ")"
+      ].join(" ")
+    );
+  }
+  return clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
+}
+function messageWhere(args) {
+  const clauses = ["m.date IS NOT NULL"];
+  const queryArgs = args;
+  if (queryArgs.query) {
+    const like = likeString(queryArgs.query);
+    clauses.push(
+      [
+        "(",
+        `lower(coalesce(m.text, '')) LIKE ${like} ESCAPE '\\'`,
+        `OR lower(coalesce(c.display_name, '')) LIKE ${like} ESCAPE '\\'`,
+        `OR lower(coalesce(c.chat_identifier, '')) LIKE ${like} ESCAPE '\\'`,
+        `OR lower(coalesce(h.id, '')) LIKE ${like} ESCAPE '\\'`,
+        ")"
+      ].join(" ")
+    );
+  }
+  if (queryArgs.participant) {
+    clauses.push(
+      [
+        "(",
+        `lower(coalesce(h.id, '')) LIKE ${likeString(queryArgs.participant)} ESCAPE '\\'`,
+        "OR",
+        chatParticipantPredicate(queryArgs.participant),
+        ")"
+      ].join(" ")
+    );
+  }
+  if (queryArgs.service) {
+    clauses.push(`coalesce(m.service, c.service_name) = ${sqlString(queryArgs.service)}`);
+  }
+  if (queryArgs.unreadOnly) {
+    clauses.push("m.is_from_me = 0");
+    clauses.push("coalesce(m.is_read, 0) = 0");
+  }
+  if (args.direction === "incoming") {
+    clauses.push("m.is_from_me = 0");
+  }
+  if (args.direction === "outgoing") {
+    clauses.push("m.is_from_me = 1");
+  }
+  if (args.since) {
+    clauses.push(`${messageUnixSeconds()} >= ${unixSeconds(args.since)}`);
+  }
+  if (args.before) {
+    clauses.push(`${messageUnixSeconds()} < ${unixSeconds(args.before)}`);
+  }
+  if (args.chatHandle) {
+    clauses.push(`c.ROWID = ${args.chatHandle.chatId}`);
+    clauses.push(`c.guid = ${sqlString(args.chatHandle.guid)}`);
+  }
+  if ("handles" in args && args.handles?.length) {
+    clauses.push(`m.ROWID IN (${args.handles.map((handle) => handle.messageId).join(", ")})`);
+  }
+  return `WHERE ${clauses.join(" AND ")}`;
+}
+function chatParticipantPredicate(value) {
+  const like = likeString(value);
+  return `EXISTS (SELECT 1 FROM handle h2 JOIN chat_handle_join chj2 ON chj2.handle_id = h2.ROWID WHERE chj2.chat_id = c.ROWID AND lower(coalesce(h2.id, '')) LIKE ${like} ESCAPE '\\')`;
+}
+function textSelect(maxTextChars2) {
+  if (maxTextChars2 === 0) {
+    return "  '' AS text,";
+  }
+  return `  substr(coalesce(m.text, ''), 1, ${maxTextChars2}) AS text,`;
+}
+function messageUnixSeconds() {
+  return "(CASE WHEN abs(m.date) > 1000000000000 THEN (m.date / 1000000000.0) ELSE m.date END + 978307200)";
+}
+function unixSeconds(value) {
+  const parsed = new Date(value).getTime();
+  if (!Number.isFinite(parsed)) {
+    throw new MessagesDatabaseError(`Invalid date: ${value}`);
+  }
+  return Math.floor(parsed / 1e3);
+}
+function sqlString(value) {
+  return `'${value.replaceAll("'", "''")}'`;
+}
+function likeString(value) {
+  return sqlString(`%${value.toLowerCase().replace(/[\\%_]/g, "\\$&")}%`);
+}
+function clampLimit(value, fallback) {
+  if (!value || !Number.isFinite(value)) {
+    return fallback;
+  }
+  return Math.max(1, Math.min(100, Math.trunc(value)));
+}
+function chatRow(row) {
+  const guid3 = row.guid ?? "";
   return {
-    from: args.from,
-    to: args.to,
-    cc: args.cc ?? [],
-    bcc: args.bcc ?? [],
-    subject: args.subject,
-    bodyChars: args.body.length
+    handle: {
+      chatId: Number(row.chatId),
+      guid: guid3
+    },
+    chatId: Number(row.chatId),
+    guid: guid3,
+    chatIdentifier: emptyToUndefined(row.chatIdentifier),
+    displayName: emptyToUndefined(row.displayName),
+    serviceName: emptyToUndefined(row.serviceName),
+    participants: splitParticipants(row.participants),
+    participantCount: Number(row.participantCount) || 0,
+    messageCount: Number(row.messageCount) || 0,
+    unreadCount: Number(row.unreadCount) || 0,
+    lastMessageDate: appleDate(row.lastDateRaw)
   };
 }
-function encodeMovedItem(item, action) {
-  const handle = encodeMessageHandle({
-    account: item.account,
-    mailbox: item.toMailbox,
-    id: item.id,
-    messageId: item.messageId
-  });
-  const previousHandle = encodeMessageHandle({
-    account: item.account,
-    mailbox: item.fromMailbox,
-    id: item.id,
-    messageId: item.messageId
-  });
-  const undoToken = encodeUndoToken({
-    action,
-    account: item.account,
-    id: item.id,
-    messageId: item.messageId,
-    fromMailbox: item.fromMailbox,
-    toMailbox: item.toMailbox,
-    createdAt: (/* @__PURE__ */ new Date()).toISOString()
-  });
+function messageRow(row, maxTextChars2) {
+  const text = row.text ?? "";
+  const textChars = Number(row.textChars) || 0;
+  const chatId = row.chatId === null || row.chatId === void 0 ? void 0 : Number(row.chatId);
+  const chatGuid = row.chatGuid ?? "";
   return {
-    ...item,
-    handle,
-    previousHandle,
-    undoToken
+    handle: {
+      messageId: Number(row.messageId),
+      guid: row.guid ?? "",
+      chatId
+    },
+    chatHandle: chatId && chatGuid ? { chatId, guid: chatGuid } : void 0,
+    messageId: Number(row.messageId),
+    guid: row.guid ?? "",
+    chatId,
+    chatIdentifier: emptyToUndefined(row.chatIdentifier),
+    displayName: emptyToUndefined(row.displayName),
+    service: emptyToUndefined(row.service),
+    sender: emptyToUndefined(row.sender),
+    isFromMe: Number(row.isFromMe) === 1,
+    date: appleDate(row.dateRaw),
+    text,
+    textChars,
+    truncated: textChars > maxTextChars2,
+    hasAttachments: Number(row.hasAttachments) === 1,
+    attachmentCount: Number(row.attachmentCount) || 0
   };
+}
+function splitParticipants(value) {
+  return value ? value.split(", ").map((item) => item.trim()).filter(Boolean) : [];
+}
+function emptyToUndefined(value) {
+  return value?.trim() ? value : void 0;
+}
+function appleDate(value) {
+  const raw = Number(value);
+  if (!Number.isFinite(raw) || raw === 0) {
+    return void 0;
+  }
+  const seconds = Math.abs(raw) > 1e12 ? raw / 1e9 : raw;
+  return new Date((seconds + 978307200) * 1e3).toISOString();
+}
+function databaseFailureMessage(stderr) {
+  const detail = stderr.trim();
+  const guidance = "Unable to read Apple Messages. Grant Full Disk Access to Codex or the launching terminal, then retry. The plugin reads ~/Library/Messages/chat.db in read-only mode.";
+  return detail ? `${guidance} sqlite3 said: ${detail.slice(0, 500)}` : guidance;
 }
 
 // src/permissions/appleScriptBootstrap.ts
-import { spawn } from "node:child_process";
+import { spawn as spawn3 } from "node:child_process";
 var AppleScriptPermissionError = class extends Error {
   constructor(message, stderr) {
     super(message);
@@ -31368,8 +31578,8 @@ var OsascriptRunner = class {
   }
   timeoutMs;
   run(script) {
-    return new Promise((resolve2, reject) => {
-      const child = spawn("/usr/bin/osascript", ["-e", script], {
+    return new Promise((resolve, reject) => {
+      const child = spawn3("/usr/bin/osascript", ["-e", script], {
         stdio: ["ignore", "pipe", "pipe"]
       });
       let stdout = "";
@@ -31406,7 +31616,7 @@ var OsascriptRunner = class {
         settled = true;
         clearTimeout(timer);
         if (code === 0) {
-          resolve2(stdout);
+          resolve(stdout);
           return;
         }
         reject(new AppleScriptPermissionError(`AppleScript permission probe exited with code ${code}`, stderr.trim()));
@@ -31548,10 +31758,10 @@ var PermissionsService = class {
     }
   }
 };
-function summarizeMailPermission(result) {
+function summarizeMessagesPermission(result) {
   return {
-    accountCount: result.accountCount,
-    mailboxCount: result.mailboxCount
+    chatCount: result.chatCount,
+    messageCount: result.messageCount
   };
 }
 function formatError2(error51) {
@@ -31563,113 +31773,6 @@ function formatError2(error51) {
     }
   }
   return message;
-}
-
-// src/swiftBridge.ts
-import { spawn as spawn2 } from "node:child_process";
-import { existsSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-var SwiftBridgeError = class extends Error {
-  constructor(message, stderr) {
-    super(message);
-    this.stderr = stderr;
-    this.name = "SwiftBridgeError";
-  }
-  stderr;
-};
-var SwiftBridge = class {
-  constructor(options) {
-    this.options = options;
-  }
-  options;
-  async call(command, input = {}) {
-    const stdout = await this.runHelper({ command, input });
-    const trimmed = stdout.trim();
-    if (!trimmed) {
-      return void 0;
-    }
-    try {
-      return JSON.parse(trimmed);
-    } catch (error51) {
-      throw new SwiftBridgeError(
-        `Swift helper returned invalid JSON: ${error51 instanceof Error ? error51.message : String(error51)}`
-      );
-    }
-  }
-  runHelper(payload) {
-    return new Promise((resolvePromise, reject) => {
-      const builtHelper = this.options.helperPath ?? defaultHelperPath();
-      const swiftDir = defaultSwiftPackagePath();
-      const hasBuiltHelper = existsSync(builtHelper);
-      const command = hasBuiltHelper ? builtHelper : "swift";
-      const args = hasBuiltHelper ? [] : ["run", "--package-path", swiftDir, "apple-mail-helper"];
-      const child = spawn2(command, args, {
-        cwd: hasBuiltHelper ? dirname(builtHelper) : swiftDir,
-        stdio: ["pipe", "pipe", "pipe"]
-      });
-      let stdout = "";
-      let stderr = "";
-      let settled = false;
-      const timer = setTimeout(() => {
-        if (settled) {
-          return;
-        }
-        settled = true;
-        child.kill("SIGTERM");
-        reject(new SwiftBridgeError(`Swift helper timed out after ${this.options.timeoutMs}ms`));
-      }, this.options.timeoutMs);
-      child.stdout.setEncoding("utf8");
-      child.stderr.setEncoding("utf8");
-      child.stdout.on("data", (chunk) => {
-        stdout += chunk;
-      });
-      child.stderr.on("data", (chunk) => {
-        stderr += chunk;
-      });
-      child.on("error", (error51) => {
-        if (settled) {
-          return;
-        }
-        settled = true;
-        clearTimeout(timer);
-        reject(new SwiftBridgeError(`Failed to start Swift helper: ${error51.message}`));
-      });
-      child.on("close", (code) => {
-        if (settled) {
-          return;
-        }
-        settled = true;
-        clearTimeout(timer);
-        if (code === 0) {
-          resolvePromise(stdout);
-          return;
-        }
-        reject(new SwiftBridgeError(`Swift helper exited with code ${code}`, stderr.trim().slice(0, 2e3)));
-      });
-      child.stdin.end(`${JSON.stringify(payload)}
-`);
-    });
-  }
-};
-function moduleDir() {
-  return dirname(fileURLToPath(import.meta.url));
-}
-function defaultHelperPath() {
-  const dir = moduleDir();
-  const candidates = [
-    resolve(dir, "apple-mail-helper"),
-    resolve(dir, "../plugins/apple-mail/dist/apple-mail-helper"),
-    resolve(dir, "../../../plugins/apple-mail/dist/apple-mail-helper"),
-    resolve(dir, "../swift/.build/debug/apple-mail-helper"),
-    resolve(dir, "../../../swift/.build/debug/apple-mail-helper")
-  ];
-  return candidates.find(existsSync) ?? candidates[0];
-}
-function defaultSwiftPackagePath() {
-  const dir = moduleDir();
-  const candidates = [resolve(dir, "../swift"), resolve(dir, "../../../swift")];
-  return candidates.find((candidate) => existsSync(resolve(candidate, "Package.swift"))) ?? candidates[0];
 }
 
 // src/calendar/swiftCalendarBridge.ts
@@ -31688,6 +31791,16 @@ var RemindersNativeBridgeError = class extends Error {
     super(message);
     this.stderr = stderr;
     this.name = "RemindersNativeBridgeError";
+  }
+  stderr;
+};
+
+// src/swiftBridge.ts
+var SwiftBridgeError = class extends Error {
+  constructor(message, stderr) {
+    super(message);
+    this.stderr = stderr;
+    this.name = "SwiftBridgeError";
   }
   stderr;
 };
@@ -31836,135 +31949,6 @@ var mailUndoMoveSchema = external_exports.object({
   dryRun: external_exports.boolean().optional()
 }).strict();
 
-// src/mail/tools.ts
-function registerMailTools(server2, mail2) {
-  server2.registerTool(
-    "mail_list_accounts",
-    {
-      title: "List Apple Mail accounts",
-      description: "List Apple Mail accounts, addresses, and mailbox names configured on this Mac.",
-      annotations: { readOnlyHint: true }
-    },
-    async () => safe(() => mail2.listAccounts())
-  );
-  server2.registerTool(
-    "mail_list_mailboxes",
-    {
-      title: "List Apple Mail mailboxes",
-      description: "List Apple Mail mailboxes with inferred roles such as inbox, sent, archive, trash, junk, and other.",
-      annotations: { readOnlyHint: true }
-    },
-    async () => safe(() => mail2.listMailboxes())
-  );
-  server2.registerTool(
-    "mail_search",
-    {
-      title: "Search Apple Mail",
-      description: "Search live Apple Mail metadata, including recipients, and return message handles for follow-up reads or actions. Supports inbox, sent, archive, trash, junk, all, and exact mailbox scopes.",
-      inputSchema: mailSearchSchema,
-      annotations: { readOnlyHint: true }
-    },
-    async (args) => safe(() => mail2.search(args))
-  );
-  server2.registerTool(
-    "mail_retrieve_context",
-    {
-      title: "Retrieve Apple Mail context",
-      description: "Perform live RAG-style retrieval over Apple Mail by searching candidates, including recipient metadata, reading bodies in memory, and returning ranked useful snippets. Use scope sent plus recipient for sent-mail questions.",
-      inputSchema: mailRetrieveContextSchema,
-      annotations: { readOnlyHint: true }
-    },
-    async (args) => safe(() => mail2.retrieveContext(args))
-  );
-  server2.registerTool(
-    "mail_read",
-    {
-      title: "Read Apple Mail messages",
-      description: "Read selected Apple Mail messages by handle with body length limits.",
-      inputSchema: mailReadSchema,
-      annotations: { readOnlyHint: true }
-    },
-    async (args) => safe(() => mail2.read(args))
-  );
-  server2.registerTool(
-    "mail_compose",
-    {
-      title: "Compose Apple Mail draft",
-      description: "Create a visible Apple Mail compose window or draft.",
-      inputSchema: mailComposeSchema,
-      annotations: { readOnlyHint: false, destructiveHint: false }
-    },
-    async (args) => safe(() => mail2.compose(args))
-  );
-  server2.registerTool(
-    "mail_send",
-    {
-      title: "Send Apple Mail message",
-      description: "Send an email through Apple Mail when the write guard permits it; otherwise return a preview.",
-      inputSchema: mailSendSchema,
-      annotations: { readOnlyHint: false, destructiveHint: true }
-    },
-    async (args) => safe(() => mail2.send(args))
-  );
-  server2.registerTool(
-    "mail_move",
-    {
-      title: "Move Apple Mail messages",
-      description: "Move selected messages to an account role mailbox such as inbox, archive, trash, or junk, or to an exact mailbox name. Returns undo tokens.",
-      inputSchema: mailMoveSchema,
-      annotations: { readOnlyHint: false, destructiveHint: true }
-    },
-    async (args) => safe(() => mail2.move(args))
-  );
-  server2.registerTool(
-    "mail_undo_move",
-    {
-      title: "Undo Apple Mail move",
-      description: "Move messages back using undo tokens returned by mail_move, mail_archive, mail_delete, or mail_junk.",
-      inputSchema: mailUndoMoveSchema,
-      annotations: { readOnlyHint: false, destructiveHint: true }
-    },
-    async (args) => safe(() => mail2.undoMove(args))
-  );
-  server2.registerTool(
-    "mail_archive",
-    {
-      title: "Archive Apple Mail messages",
-      description: "Move selected Apple Mail messages to the account archive mailbox when the write guard permits it.",
-      inputSchema: mailWriteSchema,
-      annotations: { readOnlyHint: false, destructiveHint: true }
-    },
-    async (args) => safe(() => mail2.archive(args))
-  );
-  server2.registerTool(
-    "mail_delete",
-    {
-      title: "Delete Apple Mail messages",
-      description: "Move selected Apple Mail messages to Trash or Deleted Items when the write guard permits it. This does not permanently expunge mail.",
-      inputSchema: mailWriteSchema,
-      annotations: { readOnlyHint: false, destructiveHint: true }
-    },
-    async (args) => safe(() => mail2.delete(args))
-  );
-  server2.registerTool(
-    "mail_junk",
-    {
-      title: "Move Apple Mail messages to Junk",
-      description: "Move selected Apple Mail messages to the account junk mailbox when the write guard permits it. Returns undo tokens.",
-      inputSchema: mailWriteSchema,
-      annotations: { readOnlyHint: false, destructiveHint: true }
-    },
-    async (args) => safe(() => mail2.moveToJunk(args))
-  );
-}
-async function safe(callback) {
-  try {
-    return jsonResponse(await callback());
-  } catch (error51) {
-    return errorResponse(error51);
-  }
-}
-
 // src/messages/schemas.ts
 var optionalDate3 = external_exports.string().datetime().optional();
 var maxTextChars = external_exports.number().int().min(0).max(1e5).optional();
@@ -32017,16 +32001,77 @@ var messagesSendSchema = external_exports.object({
   dryRun: external_exports.boolean().optional()
 }).strict();
 
+// src/messages/tools.ts
+function registerMessagesTools(server2, messages2) {
+  server2.registerTool(
+    "messages_list_chats",
+    {
+      title: "List Apple Messages chats",
+      description: "List recent Apple Messages chats from the local Messages database without returning message text.",
+      inputSchema: messagesListChatsSchema,
+      annotations: { readOnlyHint: true }
+    },
+    async (args) => safe(() => messages2.listChats(args))
+  );
+  server2.registerTool(
+    "messages_fetch_new",
+    {
+      title: "Fetch new Apple Messages",
+      description: "Fetch recent Apple Messages, defaulting to unread incoming messages. Use maxTextChars: 0 for metadata-only checks.",
+      inputSchema: messagesFetchNewSchema,
+      annotations: { readOnlyHint: true }
+    },
+    async (args) => safe(() => messages2.fetchNew(args))
+  );
+  server2.registerTool(
+    "messages_search",
+    {
+      title: "Search Apple Messages",
+      description: "Search local Apple Messages by message text, participant, service, chat, date window, direction, or unread status. Returns handles for follow-up reads.",
+      inputSchema: messagesSearchSchema,
+      annotations: { readOnlyHint: true }
+    },
+    async (args) => safe(() => messages2.search(args))
+  );
+  server2.registerTool(
+    "messages_read",
+    {
+      title: "Read Apple Messages",
+      description: "Read selected Apple Messages by message handle, or recent messages from a chat handle, with text length limits.",
+      inputSchema: messagesReadSchema,
+      annotations: { readOnlyHint: true }
+    },
+    async (args) => safe(() => messages2.read(args))
+  );
+  server2.registerTool(
+    "messages_send",
+    {
+      title: "Send Apple Message",
+      description: "Send an Apple Message through Messages.app when the write guard permits it; otherwise return a metadata-only preview.",
+      inputSchema: messagesSendSchema,
+      annotations: { readOnlyHint: false, destructiveHint: true }
+    },
+    async (args) => safe(() => messages2.send(args))
+  );
+}
+async function safe(callback) {
+  try {
+    return jsonResponse(await callback());
+  } catch (error51) {
+    return errorResponse(error51);
+  }
+}
+
 // src/permissions/schemas.ts
 var requestServicePermissionSchema = external_exports.object({}).strict();
 
 // src/permissions/tools.ts
-function registerMailPermissionTool(server2, permissions) {
+function registerMessagesPermissionTool(server2, permissions) {
   registerPermissionTool(
     server2,
-    "mail_request_permissions",
-    "Request Apple Mail permissions",
-    "First-run setup tool that triggers macOS Apple Mail Automation permission prompts through a metadata-only AppleScript probe, then verifies native Mail access.",
+    "messages_request_permissions",
+    "Request Apple Messages permissions",
+    "First-run setup tool that triggers macOS Apple Messages Automation permission prompts through a metadata-only AppleScript probe, then verifies read-only Messages database access.",
     permissions
   );
 }
@@ -32142,30 +32187,36 @@ var remindersMoveSchema = external_exports.object({
 }).strict();
 
 // src/servers/register.ts
-function registerAppleMailServerTools(server2, mail2, permissions) {
-  registerMailPermissionTool(server2, permissions);
-  registerMailTools(server2, mail2);
+function registerAppleMessagesServerTools(server2, messages2, permissions) {
+  registerMessagesPermissionTool(server2, permissions);
+  registerMessagesTools(server2, messages2);
 }
 
-// src/servers/mail.ts
-var config2 = getRuntimeConfig(process.env, "mail");
-var bridge = new SwiftBridge({ timeoutMs: config2.helperTimeoutMs });
-var mail = new MailService(bridge, config2);
+// src/servers/messages.ts
+var config2 = getRuntimeConfig(process.env, "messages");
+var messages = new MessagesService(
+  new SqliteMessagesStore({
+    dbPath: config2.messagesDatabasePath,
+    timeoutMs: config2.helperTimeoutMs
+  }),
+  new MessagesAppleScriptSender(config2.helperTimeoutMs),
+  config2
+);
 var appleScript = new AppleScriptPermissionBootstrap(new OsascriptRunner(config2.helperTimeoutMs));
 var server = new McpServer({
-  name: "apple-mail",
+  name: "apple-messages",
   version: "0.2.0"
 });
-registerAppleMailServerTools(
+registerAppleMessagesServerTools(
   server,
-  mail,
+  messages,
   new PermissionsService({
-    service: "mail",
-    nativeAction: "mail.requestPermission",
+    service: "messages",
+    nativeAction: "messages.requestAccess",
     appleScript,
-    nativeProbe: () => mail.requestPermission(),
-    summarizeNative: summarizeMailPermission,
-    nextStep: "Approve the macOS Automation prompt for Mail, or enable Codex for Mail in System Settings > Privacy & Security > Automation."
+    nativeProbe: () => messages.requestAccess(),
+    summarizeNative: summarizeMessagesPermission,
+    nextStep: "Approve the macOS Automation prompt for Messages, and grant Full Disk Access to Codex or the launching terminal in System Settings > Privacy & Security > Full Disk Access so the read-only Messages database can be queried."
   })
 );
 await server.connect(new StdioServerTransport());

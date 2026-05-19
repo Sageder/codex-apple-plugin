@@ -1,5 +1,5 @@
 export type WriteMode = "ask" | "direct";
-export type AppleServiceName = "mail" | "calendar" | "reminders";
+export type AppleServiceName = "mail" | "calendar" | "reminders" | "messages";
 
 export interface RuntimeConfig {
   writeMode: WriteMode;
@@ -8,12 +8,14 @@ export interface RuntimeConfig {
   contextTopK: number;
   helperTimeoutMs: number;
   defaultRemindersList?: string;
+  messagesDatabasePath?: string;
 }
 
 const SERVICE_ENV_PREFIX: Record<AppleServiceName, string> = {
   mail: "APPLE_MAIL",
   calendar: "APPLE_CALENDAR",
-  reminders: "APPLE_REMINDERS"
+  reminders: "APPLE_REMINDERS",
+  messages: "APPLE_MESSAGES"
 };
 
 function parsePositiveInt(value: string | undefined, fallback: number): number {
@@ -51,6 +53,7 @@ export function getRuntimeConfig(
     retrievalCandidateLimit: parsePositiveInt(envValue(env, "RETRIEVAL_CANDIDATE_LIMIT", "mail"), 30),
     contextTopK: parsePositiveInt(envValue(env, "CONTEXT_TOP_K", "mail"), 5),
     helperTimeoutMs: parsePositiveInt(envValue(env, "HELPER_TIMEOUT_MS", service), 60000),
-    defaultRemindersList: env.APPLE_REMINDERS_DEFAULT_LIST?.trim() || undefined
+    defaultRemindersList: env.APPLE_REMINDERS_DEFAULT_LIST?.trim() || undefined,
+    messagesDatabasePath: service === "messages" ? envValue(env, "DB_PATH", service)?.trim() || undefined : undefined
   };
 }

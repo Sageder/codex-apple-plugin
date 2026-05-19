@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { PermissionsService, summarizeAccessStatus, summarizeMailPermission } from "../permissions/permissionsService.js";
+import {
+  PermissionsService,
+  summarizeAccessStatus,
+  summarizeMailPermission,
+  summarizeMessagesPermission
+} from "../permissions/permissionsService.js";
 
 describe("permissions service", () => {
   it("runs AppleScript first and returns only sanitized native summaries", async () => {
@@ -137,5 +142,39 @@ describe("permissions service", () => {
       ok: false,
       error: "Swift calendar helper exited with code 1: Calendar access was not granted"
     });
+  });
+
+  it("summarizes Messages database access without exposing message text", async () => {
+    const service = new PermissionsService({
+      service: "messages",
+      nativeAction: "messages.requestAccess",
+      appleScript: {
+        async request() {
+          return {
+            action: "osascript.messages.metadataProbe",
+            summary: { serviceCount: 2 }
+          };
+        }
+      },
+      async nativeProbe() {
+        return { chatCount: 4, messageCount: 25, text: "private" } as never;
+      },
+      summarizeNative: summarizeMessagesPermission,
+      nextStep: "Enable Messages"
+    });
+
+    const result = await service.request();
+    const json = JSON.stringify(result);
+
+    expect(result.ok).toBe(true);
+    expect(result.result).toMatchObject({
+      service: "messages",
+      ok: true,
+      native: {
+        action: "messages.requestAccess",
+        summary: { chatCount: 4, messageCount: 25 }
+      }
+    });
+    expect(json).not.toContain("private");
   });
 });

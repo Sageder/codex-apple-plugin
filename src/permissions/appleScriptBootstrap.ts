@@ -121,6 +121,13 @@ export function scriptForPermissionProbe(service: AppleServiceName): string {
         '  return "{\\"listCount\\":" & listCount & "}"',
         "end tell"
       ].join("\n");
+    case "messages":
+      return [
+        'tell application "Messages"',
+        "  set serviceCount to count of services",
+        '  return "{\\"serviceCount\\":" & serviceCount & "}"',
+        "end tell"
+      ].join("\n");
   }
 }
 
@@ -154,6 +161,8 @@ function sanitizeAppleScriptSummary(service: AppleServiceName, value: unknown): 
       return { calendarCount: numberField(value, "calendarCount") };
     case "reminders":
       return { listCount: numberField(value, "listCount") };
+    case "messages":
+      return { serviceCount: numberField(value, "serviceCount") };
   }
 }
 
