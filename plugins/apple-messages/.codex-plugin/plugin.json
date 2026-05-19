@@ -18,7 +18,7 @@
     "shortDescription": "Use Apple Messages from Codex",
     "longDescription": "List chats, fetch new or unread messages, search and read local Apple Messages history, and send iMessage or SMS messages through local macOS Messages. Reads use the local Messages database in read-only mode and sending is guarded by the configured write mode.",
     "developerName": "Clemens Sageder",
-    "category": "Productivity",
+    "category": "Social",
     "capabilities": ["Interactive", "Read", "Write"],
     "websiteURL": "https://support.apple.com/messages",
     "privacyPolicyURL": "https://www.apple.com/legal/privacy/",
