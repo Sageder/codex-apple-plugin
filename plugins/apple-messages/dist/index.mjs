@@ -31329,6 +31329,13 @@ var SqliteMessagesStore = class {
   }
   async messages(args) {
     const maxTextChars2 = Math.max(0, args.maxTextChars ?? 12e3);
+    const query = "query" in args ? args.query?.trim() : void 0;
+    const outputLimit = clampLimit(args.limit, 25);
+    const sqlArgs = query ? {
+      ...args,
+      query: void 0,
+      limit: contentSearchScanLimit(outputLimit)
+    } : args;
     const rows = await this.queryJson([
       "SELECT",
       "  m.ROWID AS messageId,",
@@ -31342,6 +31349,7 @@ var SqliteMessagesStore = class {
       "  m.is_from_me AS isFromMe,",
       "  m.date AS dateRaw,",
       textSelect(maxTextChars2),
+      attributedBodySelect(maxTextChars2),
       "  length(coalesce(m.text, '')) AS textChars,",
       "  coalesce(m.cache_has_attachments, 0) AS hasAttachments,",
       "  (SELECT count(*) FROM message_attachment_join maj WHERE maj.message_id = m.ROWID) AS attachmentCount",
@@ -31349,11 +31357,12 @@ var SqliteMessagesStore = class {
       "LEFT JOIN handle h ON h.ROWID = m.handle_id",
       "LEFT JOIN chat_message_join cmj ON cmj.message_id = m.ROWID",
       "LEFT JOIN chat c ON c.ROWID = cmj.chat_id",
-      messageWhere(args),
+      messageWhere(sqlArgs),
       "ORDER BY m.date DESC",
-      `LIMIT ${clampLimit(args.limit, 25)}`
+      `LIMIT ${clampLimit(sqlArgs.limit, 25, 5e3)}`
     ].join("\n"));
-    return rows.map((row) => messageRow(row, maxTextChars2));
+    const messages2 = rows.map((row) => messageRow(row, maxTextChars2));
+    return query ? messages2.filter((message) => messageMatchesQuery(message, query)).slice(0, outputLimit) : messages2;
   }
   queryJson(sql) {
     return new Promise((resolve, reject) => {
@@ -31501,6 +31510,12 @@ function textSelect(maxTextChars2) {
   }
   return `  substr(coalesce(m.text, ''), 1, ${maxTextChars2}) AS text,`;
 }
+function attributedBodySelect(maxTextChars2) {
+  if (maxTextChars2 === 0) {
+    return "  NULL AS attributedBodyHex,";
+  }
+  return "  CASE WHEN coalesce(m.text, '') = '' AND m.attributedBody IS NOT NULL THEN hex(m.attributedBody) ELSE NULL END AS attributedBodyHex,";
+}
 function messageUnixSeconds() {
   return "(CASE WHEN abs(m.date) > 1000000000000 THEN (m.date / 1000000000.0) ELSE m.date END + 978307200)";
 }
@@ -31517,11 +31532,14 @@ function sqlString(value) {
 function likeString(value) {
   return sqlString(`%${value.toLowerCase().replace(/[\\%_]/g, "\\$&")}%`);
 }
-function clampLimit(value, fallback) {
+function clampLimit(value, fallback, max = 100) {
   if (!value || !Number.isFinite(value)) {
     return fallback;
   }
-  return Math.max(1, Math.min(100, Math.trunc(value)));
+  return Math.max(1, Math.min(max, Math.trunc(value)));
+}
+function contentSearchScanLimit(outputLimit) {
+  return Math.min(5e3, Math.max(500, outputLimit * 50));
 }
 function chatRow(row) {
   const guid3 = row.guid ?? "";
@@ -31543,8 +31561,10 @@ function chatRow(row) {
   };
 }
 function messageRow(row, maxTextChars2) {
-  const text = row.text ?? "";
-  const textChars = Number(row.textChars) || 0;
+  const sqliteText = row.text ?? "";
+  const decodedText = sqliteText || decodeAttributedBodyHex(row.attributedBodyHex) || "";
+  const text = maxTextChars2 === 0 ? "" : decodedText.slice(0, maxTextChars2);
+  const textChars = sqliteText ? Number(row.textChars) || 0 : decodedText.length;
   const chatId = row.chatId === null || row.chatId === void 0 ? void 0 : Number(row.chatId);
   const chatGuid = row.chatGuid ?? "";
   return {
@@ -31565,10 +31585,71 @@ function messageRow(row, maxTextChars2) {
     date: appleDate(row.dateRaw),
     text,
     textChars,
-    truncated: textChars > maxTextChars2,
+    truncated: maxTextChars2 > 0 && textChars > maxTextChars2,
     hasAttachments: Number(row.hasAttachments) === 1,
     attachmentCount: Number(row.attachmentCount) || 0
   };
+}
+function messageMatchesQuery(message, query) {
+  const terms = query.toLowerCase().split(/\s+/).map((term) => term.trim()).filter(Boolean);
+  if (!terms.length) {
+    return true;
+  }
+  const haystack = [
+    message.text,
+    message.sender,
+    message.chatIdentifier,
+    message.displayName,
+    message.service
+  ].filter(Boolean).join("\n").toLowerCase();
+  return terms.every((term) => haystack.includes(term));
+}
+function decodeAttributedBodyHex(hex3) {
+  if (!hex3) {
+    return void 0;
+  }
+  const data = Buffer.from(hex3, "hex");
+  const marker = Buffer.from("NSString", "utf8");
+  const markerIndex = data.indexOf(marker);
+  if (markerIndex < 0) {
+    return void 0;
+  }
+  const markerEnd = markerIndex + marker.length;
+  const plusIndex = data.indexOf(43, markerEnd);
+  if (plusIndex < 0 || plusIndex + 1 >= data.length) {
+    return void 0;
+  }
+  const parsed = readTypedstreamLength(data, plusIndex + 1);
+  if (!parsed) {
+    return void 0;
+  }
+  const end = parsed.offset + parsed.length;
+  if (end > data.length) {
+    return void 0;
+  }
+  return data.subarray(parsed.offset, end).toString("utf8");
+}
+function readTypedstreamLength(data, offset) {
+  const first = data[offset];
+  if (first === void 0) {
+    return void 0;
+  }
+  if (first < 128) {
+    return { length: first, offset: offset + 1 };
+  }
+  if (first === 129 && offset + 2 < data.length) {
+    return {
+      length: data[offset + 1] | data[offset + 2] << 8,
+      offset: offset + 3
+    };
+  }
+  if (first === 130 && offset + 4 < data.length) {
+    return {
+      length: data[offset + 1] | data[offset + 2] << 8 | data[offset + 3] << 16 | data[offset + 4] << 24,
+      offset: offset + 5
+    };
+  }
+  return void 0;
 }
 function splitParticipants(value) {
   return value ? value.split(", ").map((item) => item.trim()).filter(Boolean) : [];

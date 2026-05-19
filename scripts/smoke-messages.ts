@@ -23,6 +23,12 @@ try {
 
   const recent = await messages.fetchNew({ unreadOnly: false, includeSent: false, limit: 3, maxTextChars: 0 });
   console.log(`Recent incoming messages sampled: ${recent.messages.length}`);
+
+  const contentSample = await messages.fetchNew({ unreadOnly: false, includeSent: false, limit: 3, maxTextChars: 1200 });
+  const nonEmpty = contentSample.messages.filter((message) => message.text.length > 0).length;
+  const returnedChars = contentSample.messages.reduce((sum, message) => sum + message.text.length, 0);
+  console.log(`Recent incoming messages with decoded text: ${nonEmpty}/${contentSample.messages.length}`);
+  console.log(`Recent incoming decoded text chars: ${returnedChars}`);
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   const setup = typeof error === "object" && error !== null && "setup" in error ? error.setup : undefined;
