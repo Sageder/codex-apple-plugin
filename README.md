@@ -67,8 +67,8 @@ npm run permissions:request
 
 `npm run permissions:request` builds the plugins, runs metadata-only
 AppleScript probes to trigger OS permission prompts, verifies native access for
-Mail, Reminders, and Messages, and returns explicit Full Access guidance for
-Calendar. It prints counts/status only, not mail bodies, calendar notes,
+Mail, Reminders, Messages, and Notes, and returns explicit Full Access guidance
+for Calendar. It prints counts/status only, not mail bodies, calendar notes,
 reminder notes, Notes bodies, or message text.
 
 For manual MCP client setup, point the client at the desired bundled server:
