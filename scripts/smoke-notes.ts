@@ -37,11 +37,11 @@ if (!("note" in created)) {
 console.log("Synthetic Apple Note created");
 
 const handle = created.note.handle;
-const searched = await notes.search({ query: marker, limit: 5, maxSnippetChars: 0, maxScan: 5000 });
+const searched = await notes.search({ title, limit: 5, maxSnippetChars: 0, maxScan: 5000 });
 if (!searched.notes.some((note) => note.handle === handle)) {
-  throw new Error("Created synthetic note was not returned by search");
+  throw new Error("Created synthetic note was not returned by title search");
 }
-console.log("Synthetic Apple Note search verified");
+console.log("Synthetic Apple Note title search verified");
 
 const read = await notes.read({ handles: [handle], format: "text", maxBodyChars: 2000 });
 if (!read.notes[0]?.bodyText?.includes(marker)) {

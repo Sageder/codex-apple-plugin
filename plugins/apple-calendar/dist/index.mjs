@@ -31745,6 +31745,57 @@ function accountForFolderId(folderId) {
   return resolveAccount(undefined);
 }
 
+function isAccountReference(reference) {
+  const id = asString(getValue(() => reference.id(), undefined));
+  const name = asString(getValue(() => reference.name(), undefined));
+  return accounts().some((account) => {
+    const accountId = asString(getValue(() => account.id(), undefined));
+    const accountName = asString(getValue(() => account.name(), undefined));
+    return (id && accountId === id) || (name && accountName === name);
+  });
+}
+
+function folderInfoFromReference(folder, includeCounts) {
+  const path = [];
+  let cursor = folder;
+  let account;
+  let depth = 0;
+
+  while (cursor && depth < 20) {
+    if (isAccountReference(cursor)) {
+      account = cursor;
+      break;
+    }
+
+    const name = asString(getValue(() => cursor.name(), "")) || "";
+    if (name) {
+      path.unshift(name);
+    }
+
+    const parent = getValue(() => cursor.container(), undefined);
+    if (!parent) {
+      break;
+    }
+
+    cursor = parent;
+    depth += 1;
+  }
+
+  if (!account) {
+    account = accountForFolderId(asString(getValue(() => folder.id(), "")));
+  }
+
+  return folderInfo(folder, account, path, includeCounts);
+}
+
+function folderInfoFromNote(note) {
+  const folder = getValue(() => note.container(), undefined);
+  if (!folder) {
+    throw new Error("Apple Notes note has no folder container");
+  }
+  return folderInfoFromReference(folder, false);
+}
+
 function findFolderReference(account, folderId) {
   let found;
   function visit(folder) {
@@ -31803,24 +31854,14 @@ function noteInfo(note, folderInfoValue, options) {
 }
 
 function findNoteReference(handle) {
-  const allAccounts = handle.accountId || handle.accountName ? [resolveAccount(handle.accountId || handle.accountName)] : accounts();
-  for (let accountIndex = 0; accountIndex < allAccounts.length; accountIndex += 1) {
-    const account = allAccounts[accountIndex];
-    const folderInfos = collectFolders(account, { includeCounts: false });
-    for (let folderIndex = 0; folderIndex < folderInfos.length; folderIndex += 1) {
-      const info = folderInfos[folderIndex];
-      if (handle.folderId && info.id !== handle.folderId) {
-        continue;
-      }
-      const folder = findFolderReference(account, info.id);
-      const notes = getValue(() => folder.notes(), []);
-      for (let noteIndex = 0; noteIndex < notes.length; noteIndex += 1) {
-        const note = notes[noteIndex];
-        if (asString(getValue(() => note.id(), "")) === handle.id) {
-          return { note, folder, folderInfo: info };
-        }
-      }
+  const candidates = getValue(() => Notes.notes.whose({ id: handle.id })(), []);
+  for (let index = 0; index < candidates.length; index += 1) {
+    const note = candidates[index];
+    const info = folderInfoFromNote(note);
+    if (handle.folderId && info.id !== handle.folderId) {
+      continue;
     }
+    return { note, folder: getValue(() => note.container(), undefined), folderInfo: info };
   }
   throw new Error("Apple Notes note not found: " + handle.id);
 }
@@ -31949,34 +31990,20 @@ function search(input) {
   const maxScan = input.maxScan || 1000;
   const matches = [];
   let scanned = 0;
-  const allAccounts = input.account ? [resolveAccount(input.account)] : accounts();
-  allAccounts.forEach((account) => {
+  candidateNotes(input).forEach((note) => {
     if (scanned >= maxScan) {
       return;
     }
-    collectFolders(account, { includeCounts: false }).forEach((info) => {
-      if (scanned >= maxScan) {
-        return;
-      }
-      if (input.folderHandle && info.id !== input.folderHandle.id) {
-        return;
-      }
-      if (input.folder && !folderMatches(info, input.folder)) {
-        return;
-      }
-      const folder = findFolderReference(account, info.id);
-      getValue(() => folder.notes(), []).forEach((note) => {
-        if (scanned >= maxScan) {
-          return;
-        }
-        scanned += 1;
-        if (noteMatches(note, info, input)) {
-          const summary = noteInfo(note, info, { maxSnippetChars: input.maxSnippetChars || 0 });
-          summary.score = scoreNote(note, info, input);
-          matches.push(summary);
-        }
-      });
-    });
+    scanned += 1;
+    const info = folderInfoFromNote(note);
+    if (input.account && !accountMatches({ name: () => info.accountName, id: () => info.accountId }, input.account)) {
+      return;
+    }
+    if (noteMatches(note, info, input)) {
+      const summary = noteInfo(note, info, { maxSnippetChars: input.maxSnippetChars || 0 });
+      summary.score = scoreNote(note, info, input);
+      matches.push(summary);
+    }
   });
   matches.sort((a, b) => {
     if (input.sort === "modified") {
@@ -31991,6 +32018,19 @@ function search(input) {
     return (b.score || 0) - (a.score || 0) || String(b.modifiedAt || "").localeCompare(String(a.modifiedAt || ""));
   });
   return matches.slice(0, limit);
+}
+
+function candidateNotes(input) {
+  if (input.title) {
+    return getValue(() => Notes.notes.whose({ name: { _contains: input.title } })(), []);
+  }
+  if (input.query) {
+    const firstTerm = input.query.split(/\s+/).filter(Boolean)[0];
+    if (firstTerm) {
+      return getValue(() => Notes.notes.whose({ plaintext: { _contains: firstTerm } })(), []);
+    }
+  }
+  return getValue(() => Notes.notes(), []);
 }
 
 function read(input) {
@@ -32052,8 +32092,7 @@ function createNote(input) {
   const folder = resolveFolder(input);
   const note = Notes.Note({ name: input.title, body: bodyInputToHtml(input, input.title) });
   folder.notes.push(note);
-  const folderRef = findNoteReference({ id: asString(getValue(() => note.id(), "")) }).folderInfo;
-  return { created: true, note: noteInfo(note, folderRef, { maxSnippetChars: 0 }) };
+  return { created: true, note: noteInfo(note, folderInfoFromReference(folder, false), { maxSnippetChars: 0 }) };
 }
 
 function updateNote(input) {
