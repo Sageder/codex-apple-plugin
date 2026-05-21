@@ -31,6 +31,12 @@ Run the full local check:
 npm run check
 ```
 
+Request local Apple app permissions with metadata-only probes:
+
+```bash
+npm run permissions:request
+```
+
 Run smoke scripts against local Apple apps:
 
 ```bash
@@ -38,6 +44,7 @@ npm run smoke:mail
 npm run smoke:calendar
 npm run smoke:reminders
 npm run smoke:messages
+npm run smoke:notes
 ```
 
 `npm run build` compiles the Swift package helper used by Mail and also builds
@@ -47,6 +54,8 @@ The Calendar helper is built from `src/calendar/calendarHelper.swift` into
 The Messages plugin is TypeScript-only: it queries the local Messages database
 read-only through `sqlite3` and sends through Messages.app AppleScript behind
 the write guard.
+The Notes plugin is TypeScript-only: it uses Notes.app Apple Events behind the
+write guard.
 
 ## Repository Layout
 
@@ -78,6 +87,13 @@ plugins/apple-messages/
   assets/                        Apple Messages plugin icon
   skills/apple-messages/SKILL.md
   dist/                          Built Messages MCP server
+
+plugins/apple-notes/
+  .codex-plugin/plugin.json      Apple Notes plugin metadata
+  .mcp.json                      Apple Notes MCP server config
+  assets/                        Apple Notes plugin icon
+  skills/apple-notes/SKILL.md
+  dist/                          Built Notes MCP server
 
 src/                             Shared TypeScript MCP services, helper sources, and tests
 scripts/                         Local permission and smoke scripts
