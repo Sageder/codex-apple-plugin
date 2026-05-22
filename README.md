@@ -43,6 +43,22 @@ plugins you want. Each plugin talks to the Apple app already on your Mac.
 
 Most users should install from inside Codex:
 
+<p align="center">
+  <video
+    src="docs/assets/install-demo.mp4"
+    poster="docs/assets/install-demo-poster.png"
+    controls
+    muted
+    playsinline
+    width="720"
+  >
+    Watch the Codex marketplace install demo in docs/assets/install-demo.mp4.
+  </video>
+</p>
+
+If the video does not play in your Markdown viewer, open
+[the install demo](docs/assets/install-demo.mp4) directly.
+
 1. Open Codex.
 2. Go to **Plugins** in the sidebar.
 3. Click **Add marketplace**.
