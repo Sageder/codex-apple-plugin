@@ -3,142 +3,160 @@
 Use Apple Mail, Apple Reminders, Apple Calendar, Apple Messages, and Apple
 Notes from local Codex plugins on macOS.
 
-<p align="center">
-  <img src="plugins/apple-mail/assets/apple-mail.png" alt="Apple Mail" width="82" />
-  &nbsp;&nbsp;&nbsp;
-  <img src="plugins/apple-reminders/assets/apple-reminders.png" alt="Apple Reminders" width="82" />
-  &nbsp;&nbsp;&nbsp;
-  <img src="plugins/apple-calendar/assets/apple-calendar.png" alt="Apple Calendar" width="82" />
-  &nbsp;&nbsp;&nbsp;
-  <img src="plugins/apple-messages/assets/apple-messages.png" alt="Apple Messages" width="82" />
-  &nbsp;&nbsp;&nbsp;
-  <img src="plugins/apple-notes/assets/apple-notes.png" alt="Apple Notes" width="82" />
-</p>
+Add this repository as a Codex plugin marketplace, then install the Apple app
+plugins you want. Each plugin talks to the Apple app already on your Mac.
 
-<p align="center"><strong>Mail</strong> · <strong>Reminders</strong> · <strong>Calendar</strong> · <strong>Messages</strong> · <strong>Notes</strong></p>
+<table>
+  <tr>
+    <td align="center" width="20%">
+      <img src="plugins/apple-mail/assets/apple-mail.png" alt="Apple Mail" width="82" /><br />
+      <strong>Mail</strong><br />
+      <sub>Find, read, draft, move</sub>
+    </td>
+    <td align="center" width="20%">
+      <img src="plugins/apple-reminders/assets/apple-reminders.png" alt="Apple Reminders" width="82" /><br />
+      <strong>Reminders</strong><br />
+      <sub>Create, search, complete</sub>
+    </td>
+    <td align="center" width="20%">
+      <img src="plugins/apple-calendar/assets/apple-calendar.png" alt="Apple Calendar" width="82" /><br />
+      <strong>Calendar</strong><br />
+      <sub>Find, open, create events</sub>
+    </td>
+    <td align="center" width="20%">
+      <img src="plugins/apple-messages/assets/apple-messages.png" alt="Apple Messages" width="82" /><br />
+      <strong>Messages</strong><br />
+      <sub>Fetch, search, send</sub>
+    </td>
+    <td align="center" width="20%">
+      <img src="plugins/apple-notes/assets/apple-notes.png" alt="Apple Notes" width="82" /><br />
+      <strong>Notes</strong><br />
+      <sub>Search, read, write</sub>
+    </td>
+  </tr>
+</table>
 
-## Features
+## What You Can Do
 
-- Search, read, draft, send, archive, delete-to-trash, junk, and move Apple Mail
-  messages.
-- List reminder lists, search/read reminders, and create/update/complete/delete
-  or move reminders.
-- List calendars, search/read/show events, and create/update/delete Calendar
-  events.
-- List Messages chats, fetch new/unread messages, search/read local iMessage
-  and SMS history, and send Messages.
-- List Notes accounts/folders, search/read/show notes, inspect attachment
-  metadata, and create/update/append/move/delete notes and folders.
-- Per-plugin write guard for mutating operations, with ask mode by default.
-- Live, ephemeral reads. The plugins do not build or store persistent local
-  mail, calendar, reminders, messages, or notes indexes.
-
-## Requirements
-
-- macOS with Apple Mail, Calendar, Reminders, Messages, and Notes available.
-- Node.js and npm.
-- Xcode Command Line Tools, including `xcrun`, Swift, and `codesign`.
-- Local app permissions granted when macOS prompts for Apple Events, Calendar,
-  Reminders, Messages, Notes, or Full Disk Access.
+- Ask what is new in Mail, find messages by topic, draft replies, and move
+  messages when you confirm.
+- Check upcoming Calendar events, search old meetings, open events in
+  Calendar.app, and create or update events with a preview first.
+- Find the next Reminders item, search lists, create tasks, mark them done, and
+  move them between lists.
+- Fetch unread Messages, search local iMessage/SMS history, and send messages
+  only after confirmation.
+- Search Notes, read selected notes, create new notes, append to existing ones,
+  and organize folders.
+- Keep everything local. The plugins read from Apple apps on your Mac and do
+  not build their own persistent mail, calendar, reminder, message, or note
+  index.
 
 ## Quick Start
 
-For a fresh clone on a new Mac, run the first-run setup:
+Most users should install from inside Codex:
+
+1. Open Codex.
+2. Go to **Plugins** in the sidebar.
+3. Click **Add marketplace**.
+4. Set **Source** to `https://github.com/Sageder/codex-apple-plugin.git`.
+5. Set **Git ref** to `main`.
+6. Leave **Sparse paths** empty.
+7. Click **Add marketplace**.
+8. Install the Apple app plugins you want: Mail, Reminders, Calendar, Messages,
+   or Notes.
+
+After installing a plugin, start with a setup prompt:
+
+```text
+Set up Apple Mail permissions
+```
+
+Use the same pattern for Calendar, Reminders, Messages, or Notes. Codex will run
+the privacy-light setup tool first and tell you what to approve before using
+real content.
+
+Sparse paths are optional. If you want to restrict what Codex fetches, use
+`.agents/plugins/marketplace.json` plus the plugin folders you want, such as
+`plugins/apple-mail` or `plugins/apple-calendar`.
+
+## What macOS May Ask For
+
+macOS protects each Apple app surface separately. The setup tools ask for the
+least invasive permission check first and print clear next steps when macOS
+requires a manual toggle.
+
+| App | Permission to expect | If it needs help |
+| --- | --- | --- |
+| Mail | Automation access to Mail | Allow Codex or your launching app in System Settings > Privacy & Security > Automation. |
+| Calendar | Automation, then Calendar Full Access | Enable Full Access in System Settings > Privacy & Security > Calendars for Codex or the `apple-calendar` helper entry. |
+| Reminders | Reminders access | Allow Codex or your launching app in System Settings > Privacy & Security > Reminders. |
+| Messages | Full Disk Access for reads, Automation for sends | Enable Full Disk Access for Codex or the launching app, restart that app, then retry setup. |
+| Notes | Automation access to Notes | Allow Codex or your launching app in System Settings > Privacy & Security > Automation. |
+
+The setup probes print counts and permission status only. They do not print
+mail bodies, calendar notes, reminder notes, Notes bodies, or message text.
+
+## Try It
+
+Once setup passes, ask Codex things like:
+
+```text
+Find my newest email
+What is my next calendar event?
+Create a reminder for tomorrow at 9 to submit the form
+Search my notes for the Zurich trip plan
+Fetch my unread messages
+```
+
+For anything that changes your Apple apps, Codex previews the action first.
+Writes are guarded by default, so sending, editing, deleting, moving, or
+creating items requires an explicit confirmation.
+
+## Privacy and Safety
+
+- Everything runs locally on your Mac.
+- Reads are live and ephemeral; there is no background sync service and no
+  persistent search index.
+- Write mode defaults to `ask` for every plugin.
+- Mail delete moves messages to the account Trash or Deleted mailbox; it does
+  not permanently expunge mail.
+- Messages reads use the local Messages database in read-only mode.
+- MCP clients can still display or log tool output, so avoid sharing logs that
+  may contain personal content.
+
+## For Developers
+
+Normal Codex users do not need to clone this repository. Clone it when you want
+to build, test, or change the plugins locally:
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/Sageder/codex-apple-plugin.git
 cd codex-apple-plugin
 npm run setup
 ```
 
-`npm run setup` installs npm dependencies, builds the bundled MCP servers and
-native helpers, and runs the first permission pass. Approve any macOS prompts
-that appear.
+You need macOS, Node.js/npm, and the Xcode Command Line Tools. If the setup
+script says a tool is missing, install Node.js or run `xcode-select --install`,
+then run `npm run setup` again.
 
-This can be close to one command, but it cannot be truly one-click for every
-permission: macOS does not let a script grant protected Apple app, Calendar, or
-Full Disk Access permissions automatically. When a manual toggle is required,
-the setup command prints the exact System Settings pane and a retry command.
-
-To rerun only the permission pass after changing System Settings:
+Useful commands:
 
 ```bash
-npm run permissions:request
+npm run build
+npm run test
+npm run check
 ```
 
-`npm run permissions:request` rebuilds the plugins, runs metadata-only
-AppleScript probes to trigger OS permission prompts, verifies native access for
-Mail, Reminders, Messages, and Notes, and returns explicit Full Access guidance
-for Calendar. It prints counts/status only, not mail bodies, calendar notes,
-reminder notes, Notes bodies, or message text.
+Smoke scripts are available for local Apple app testing:
 
-For manual MCP client setup, point the client at the desired bundled server:
-
-```json
-{
-  "mcpServers": {
-    "apple-mail": {
-      "command": "node",
-      "args": ["/absolute/path/to/codex-apple-plugin/plugins/apple-mail/dist/index.mjs"],
-      "env": {
-        "APPLE_MAIL_WRITE_MODE": "ask"
-      }
-    }
-  }
-}
+```bash
+npm run smoke:mail
+npm run smoke:calendar
+npm run smoke:reminders
+npm run smoke:messages
+npm run smoke:notes
 ```
 
-The other servers are:
-
-- `plugins/apple-reminders/dist/index.mjs`
-- `plugins/apple-calendar/dist/index.mjs`
-- `plugins/apple-messages/dist/index.mjs`
-- `plugins/apple-notes/dist/index.mjs`
-
-To add this repository as a Codex plugin marketplace, use:
-
-- Source: `https://github.com/Sageder/codex-apple-plugin.git`
-- Git ref: `main`
-- Sparse paths: leave empty, or use `.agents/plugins/marketplace.json`,
-  `plugins/apple-mail`, `plugins/apple-reminders`, and
-  `plugins/apple-calendar`, `plugins/apple-messages`, and `plugins/apple-notes`
-
-## Permission Model
-
-Each plugin has a setup tool:
-
-- `mail_request_permissions`
-- `reminders_request_permissions`
-- `calendar_request_permissions`
-- `messages_request_permissions`
-- `notes_request_permissions`
-
-The setup flow first uses AppleScript for a minimal metadata probe. Mail and
-Reminders then run native permission/access probes; Messages verifies read-only
-database access; Notes verifies local Apple Events access; Calendar returns
-explicit Full Access setup guidance instead of running a native EventKit probe.
-This is intentionally a permission trigger and proof step, not an AppleScript
-replacement backend.
-
-The AppleScript probes only count accounts/mailboxes, reminder lists, or
-calendars, Messages services, or Notes accounts/folders. They do not read mail
-bodies, event notes, reminder notes, Notes bodies, or message text.
-
-Calendar and Reminders access are built as direct command-line helpers.
-Calendar setup intentionally does not run a native EventKit probe. After the
-AppleScript permission prompt is accepted, explicitly open System Settings >
-Privacy & Security > Calendars and enable Full Access for Codex or the
-`apple-calendar` helper entry shown by macOS before using Calendar tools.
-
-Messages reads use `~/Library/Messages/chat.db` in read-only mode through
-`sqlite3`. macOS protects that database, so grant Full Disk Access to Codex or
-the terminal/app that launches the MCP server before using read tools.
-macOS does not provide an API or first-run prompt for Full Disk Access. The
-`messages_request_permissions` tool therefore detects missing access and returns
-manual setup steps instead of silently failing: open System Settings > Privacy &
-Security > Full Disk Access, enable Codex or the launching terminal/app, restart
-that app, and retry the permission or smoke command.
-
-Notes uses local Apple Events because Apple does not expose a Notes equivalent
-to EventKit. Grant Automation access to Notes for Codex or the launching
-terminal/app before using Notes tools.
+For manual MCP configuration, environment variables, detailed permission
+behavior, and the complete tool list, see [docs/reference.md](docs/reference.md).
