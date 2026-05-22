@@ -6,35 +6,22 @@ Notes from local Codex plugins on macOS.
 Add this repository as a Codex plugin marketplace, then install the Apple app
 plugins you want. Each plugin talks to the Apple app already on your Mac.
 
-<table>
-  <tr>
-    <td align="center" width="20%">
-      <img src="plugins/apple-mail/assets/apple-mail.png" alt="Apple Mail" width="82" /><br />
-      <strong>Mail</strong><br />
-      <sub>Find, read, draft, move</sub>
-    </td>
-    <td align="center" width="20%">
-      <img src="plugins/apple-reminders/assets/apple-reminders.png" alt="Apple Reminders" width="82" /><br />
-      <strong>Reminders</strong><br />
-      <sub>Create, search, complete</sub>
-    </td>
-    <td align="center" width="20%">
-      <img src="plugins/apple-calendar/assets/apple-calendar.png" alt="Apple Calendar" width="82" /><br />
-      <strong>Calendar</strong><br />
-      <sub>Find, open, create events</sub>
-    </td>
-    <td align="center" width="20%">
-      <img src="plugins/apple-messages/assets/apple-messages.png" alt="Apple Messages" width="82" /><br />
-      <strong>Messages</strong><br />
-      <sub>Fetch, search, send</sub>
-    </td>
-    <td align="center" width="20%">
-      <img src="plugins/apple-notes/assets/apple-notes.png" alt="Apple Notes" width="82" /><br />
-      <strong>Notes</strong><br />
-      <sub>Search, read, write</sub>
-    </td>
-  </tr>
-</table>
+<p align="center">
+  <img src="plugins/apple-mail/assets/apple-mail.png" alt="Apple Mail" width="82" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="plugins/apple-reminders/assets/apple-reminders.png" alt="Apple Reminders" width="82" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="plugins/apple-calendar/assets/apple-calendar.png" alt="Apple Calendar" width="82" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="plugins/apple-messages/assets/apple-messages.png" alt="Apple Messages" width="82" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="plugins/apple-notes/assets/apple-notes.png" alt="Apple Notes" width="82" />
+</p>
+
+<p align="center">
+  <strong>Mail</strong> · <strong>Reminders</strong> · <strong>Calendar</strong> · <strong>Messages</strong> · <strong>Notes</strong><br />
+  <sub>Find mail, manage tasks, work with events, search messages, and write notes.</sub>
+</p>
 
 ## What You Can Do
 
