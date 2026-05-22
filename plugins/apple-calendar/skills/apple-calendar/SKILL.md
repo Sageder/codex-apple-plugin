@@ -13,6 +13,12 @@ Use this skill when a task should access local Apple Calendar.
 - Calendar availability, next event, or dated event search: `calendar_search_events`, then `calendar_read_event` for the selected handle.
 - Writes: call the mutating tool with `dryRun: true` for a preview, then repeat with `confirm: true` only after the user clearly confirms.
 
+## First-run setup behavior
+
+- If the user asks to set up the plugin, mentions a fresh clone/new Mac, or hits an access error, call `calendar_request_permissions` before any calendar list/search/read/write tool.
+- Treat permission output as an onboarding checklist: summarize the next step in plain language, ask the user to approve macOS prompts or enable Calendar Full Access when needed, then retry only after they say it is done.
+- Do not use real event notes to test permissions. The setup tool is the privacy-light probe.
+
 ## Workflow
 
 - Use `calendar_list_calendars` before creating events unless the target calendar id is already known.

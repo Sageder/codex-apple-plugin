@@ -24,9 +24,9 @@
     "privacyPolicyURL": "https://www.apple.com/legal/privacy/",
     "termsOfServiceURL": "https://www.apple.com/legal/internet-services/terms/site.html",
     "defaultPrompt": [
+      "Set up Apple Reminders permissions",
       "Find my next reminder",
-      "Search Apple Reminders",
-      "Create a reminder"
+      "Search Apple Reminders"
     ],
     "brandColor": "#FF9500",
     "composerIcon": "./assets/apple-reminders.png",

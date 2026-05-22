@@ -24,9 +24,9 @@
     "privacyPolicyURL": "https://www.apple.com/legal/privacy/",
     "termsOfServiceURL": "https://www.apple.com/legal/internet-services/terms/site.html",
     "defaultPrompt": [
+      "Set up Apple Calendar permissions",
       "Find my next event",
-      "Search my calendar",
-      "Create a calendar event"
+      "Search my calendar"
     ],
     "brandColor": "#FF3B30",
     "composerIcon": "./assets/apple-calendar.png",

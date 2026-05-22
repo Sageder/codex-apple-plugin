@@ -24,9 +24,9 @@
     "privacyPolicyURL": "https://www.apple.com/legal/privacy/",
     "termsOfServiceURL": "https://www.apple.com/legal/internet-services/terms/site.html",
     "defaultPrompt": [
+      "Set up Apple Mail permissions",
       "Find my newest email",
-      "Search Apple Mail for context",
-      "Draft a reply in Apple Mail"
+      "Search Apple Mail for context"
     ],
     "brandColor": "#0A84FF",
     "composerIcon": "./assets/apple-mail.png",

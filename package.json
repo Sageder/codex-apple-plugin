@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Local Codex plugins for Apple Mail, Calendar, Reminders, Messages, and Notes workflows.",
   "scripts": {
+    "setup": "bash scripts/setup-macos.sh",
     "build": "npm run clean:dist && tsc -p tsconfig.json && npm run build:mcp && npm run build:mail-helper && npm run build:calendar-helper && npm run build:reminders-helper",
     "clean:dist": "rm -rf plugins/apple-mail/dist plugins/apple-calendar/dist plugins/apple-reminders/dist plugins/apple-messages/dist plugins/apple-notes/dist",
     "build:mcp": "mkdir -p plugins/apple-mail/dist plugins/apple-calendar/dist plugins/apple-reminders/dist plugins/apple-messages/dist plugins/apple-notes/dist && esbuild src/servers/mail.ts --bundle --platform=node --format=esm --target=node18 --outfile=plugins/apple-mail/dist/index.mjs && esbuild src/servers/calendar.ts --bundle --platform=node --format=esm --target=node18 --outfile=plugins/apple-calendar/dist/index.mjs && esbuild src/servers/reminders.ts --bundle --platform=node --format=esm --target=node18 --outfile=plugins/apple-reminders/dist/index.mjs && esbuild src/servers/messages.ts --bundle --platform=node --format=esm --target=node18 --outfile=plugins/apple-messages/dist/index.mjs && esbuild src/servers/notes.ts --bundle --platform=node --format=esm --target=node18 --outfile=plugins/apple-notes/dist/index.mjs",

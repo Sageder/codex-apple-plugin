@@ -15,6 +15,12 @@ Use this skill when a task should access local Apple Notes.
 - Create or organize notes: preview with `dryRun: true`, then repeat with `confirm: true` only after the user clearly confirms.
 - Open a note in the app: `notes_show`.
 
+## First-run setup behavior
+
+- If the user asks to set up the plugin, mentions a fresh clone/new Mac, or hits an access error, call `notes_request_permissions` before any Notes list/search/read/write tool.
+- Treat permission output as an onboarding checklist: summarize the next step in plain language, ask the user to approve macOS prompts or System Settings toggles when needed, then retry only after they say it is done.
+- Do not use real note bodies to test permissions. The setup tool is the privacy-light probe.
+
 ## Workflow
 
 - Use `notes_search` for title/body/folder/account/date filters. Keep `limit` and `maxSnippetChars` conservative unless the user asks for broad context.

@@ -43,17 +43,30 @@ Notes from local Codex plugins on macOS.
 
 ## Quick Start
 
-Clone and build the repository:
+For a fresh clone on a new Mac, run the first-run setup:
 
 ```bash
 git clone <repo-url>
 cd codex-apple-plugin
-npm install
-npm run build
+npm run setup
+```
+
+`npm run setup` installs npm dependencies, builds the bundled MCP servers and
+native helpers, and runs the first permission pass. Approve any macOS prompts
+that appear.
+
+This can be close to one command, but it cannot be truly one-click for every
+permission: macOS does not let a script grant protected Apple app, Calendar, or
+Full Disk Access permissions automatically. When a manual toggle is required,
+the setup command prints the exact System Settings pane and a retry command.
+
+To rerun only the permission pass after changing System Settings:
+
+```bash
 npm run permissions:request
 ```
 
-`npm run permissions:request` builds the plugins, runs metadata-only
+`npm run permissions:request` rebuilds the plugins, runs metadata-only
 AppleScript probes to trigger OS permission prompts, verifies native access for
 Mail, Reminders, Messages, and Notes, and returns explicit Full Access guidance
 for Calendar. It prints counts/status only, not mail bodies, calendar notes,

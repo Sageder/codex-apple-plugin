@@ -14,6 +14,12 @@ Use this skill when a task should access local Apple Messages.
 - Broad lookup: `messages_search`, then `messages_read` for selected handles or a chat handle.
 - Writes: call `messages_send` with `dryRun: true` for a preview, then repeat with `confirm: true` only after the user clearly confirms.
 
+## First-run setup behavior
+
+- If the user asks to set up the plugin, mentions a fresh clone/new Mac, or hits an access error, call `messages_request_permissions` before any Messages list/search/read/send tool.
+- Treat permission output as an onboarding checklist: summarize the next step in plain language, ask the user to approve macOS prompts or enable Full Disk Access when needed, then retry only after they say it is done.
+- Do not use real message text to test permissions. The setup tool is the privacy-light probe; for metadata-only readiness checks use `maxTextChars: 0`.
+
 ## Workflow
 
 - Use `messages_list_chats` when the user names a conversation but not a specific message.

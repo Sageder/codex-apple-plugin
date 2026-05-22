@@ -14,6 +14,12 @@ Use this skill when a task should access local Apple Mail.
 - Broad mail context such as "what matters about X": `mail_retrieve_context`.
 - Writes: call the mutating tool with `dryRun: true` for a preview, then repeat with `confirm: true` only after the user clearly confirms.
 
+## First-run setup behavior
+
+- If the user asks to set up the plugin, mentions a fresh clone/new Mac, or hits an access error, call `mail_request_permissions` before any mail search/read/write tool.
+- Treat permission output as an onboarding checklist: summarize the next step in plain language, ask the user to approve macOS prompts or System Settings toggles when needed, then retry only after they say it is done.
+- Do not use real mail content to test permissions. The setup tool is the privacy-light probe.
+
 ## Workflow
 
 - Prefer `mail_retrieve_context` for broad or fuzzy requests like "find what matters about X" or "use my email as context".
